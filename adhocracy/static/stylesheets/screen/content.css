@@ -676,13 +676,15 @@ body.logged_in #nav li a {
   overflow: hidden;
 }
 
+#logo_row, #organisation_logo{
+  height: 35px;
+}
+
 #organisation_logo {
   overflow: hidden;
   padding-left: 23px;
-}
-
-#subheader.logo #organisation_logo{
-  height: 35px;
+  max-width: 650px;
+  float: left;
 }
 
 #organisation_logo img {
@@ -713,6 +715,7 @@ body.logged_in #nav li a {
   padding-top: 19px;
   float: left;
 }
+
 #subheader.logo #subnav {
   padding-top: 29px;
 }
@@ -1316,12 +1319,8 @@ html.js .alert .close { display: block }
 .list_filter {
   display: block;
   overflow: hidden;
-  padding-top: 19px;
+  padding-top: 10px;
   padding-right: 20px;
-}
-
-#subheader.logo #searchbox {
-  padding-top: 29px;
 }
 
 .list_filter {
