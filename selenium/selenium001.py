@@ -7,6 +7,7 @@ import subprocess
 import shlex
 import os
 import signal
+import errno
 
 from check_port_free import check_port_free   
 from selenium import webdriver
