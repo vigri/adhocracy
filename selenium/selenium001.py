@@ -13,10 +13,17 @@ from selenium import webdriver
 
 
 class vgTest(unittest.TestCase):
+    def check_folder(self,path):
+        # Ensure given path exists, if not create it
+        try:
+            os.makedirs(path)
+        except OSError as exception:
+            if exception.errno != errno.EEXIST:
+                raise
     def start_selenium_server_standalone(self):
         null=open('/dev/null','wb')
         cmd = ['java','-jar','res/selenium-2.26.0/selenium-server-standalone-2.26.0.jar']
-        proc = subprocess.Popen(cmd,preexec_fn=os.setsid)
+        proc = subprocess.Popen(cmd,stderr=null,stdout=null,preexec_fn=os.setsid)
         return proc
     
     def shutdown_server(self,pid):
@@ -27,7 +34,7 @@ class vgTest(unittest.TestCase):
         ## __file__
         ## os.path.dirname(__file__)
         ## os.pazh.join
-        proc = subprocess.Popen('../../../../paster_interactive.sh',preexec_fn=os.setsid)
+        proc = subprocess.Popen('../../../../paster_interactive.sh',stderr=null, stdout=null,preexec_fn=os.setsid)
         return proc
         
     def shutdown_adhocracy(self, pid):
@@ -41,6 +48,9 @@ class vgTest(unittest.TestCase):
         if errors:    
             # Fehler
             raise Exception("\n".join(errors))
+        
+        # Ensure bak_db folder exists, if not create it
+        self.check_folder('bak_db')
         
         # Database isolation - trivial - copy database to some other destination
         shutil.copyfile('../../../var/development.db','bak_db/adhocracy_backup.db')       
@@ -75,7 +85,7 @@ class vgTest(unittest.TestCase):
         # Database isolation - trivial - restore our saved database
         shutil.copyfile('bak_db/adhocracy_backup.db','../../../var/development.db')
         
-    def xtest_title_google(self):
+    def test_title_google(self):
         self.driver.get('http://google.com')
         title_tag = self.driver.find_element_by_tag_name('title')
         self.assertEqual(title_tag.text, 'Google')
