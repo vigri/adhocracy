@@ -18,6 +18,10 @@ class vgTest(unittest.TestCase):
         # Ensure given path exists, if not create it
         try:
             os.makedirs(path)
+	    file = open('bak_db/.git_keep_this', 'w')
+	    file.write('')
+	    file.close()
+            
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise
