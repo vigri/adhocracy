@@ -44,11 +44,7 @@ class selTest(unittest.TestCase):
     def check_folder(self,path):
         # Ensure given path exists, if not create it
         try:
-            os.makedirs(path)
-	    file = open(path,'/.git_keep_this', 0777)
-	    file.write('')
-	    file.close()
-            
+            os.makedirs(path)            
         except OSError as exception:
             if exception.errno != errno.EEXIST:
                 raise
