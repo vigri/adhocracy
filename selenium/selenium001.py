@@ -126,7 +126,8 @@ class selTest(unittest.TestCase):
     
     def test_login(self):
 	self.driver.get('http://adhocracy.lan:5001')
-	self.driver.find_element_by_css_selector("#nav_login > a").click()
+	l_login = self.driver.find_element_by_css_selector("#nav_login > a")
+	l_login.click()
 	
 	i_login = self.driver.find_element_by_css_selector("input[name=\"login\"]")
 	i_login.clear()
