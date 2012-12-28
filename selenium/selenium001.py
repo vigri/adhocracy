@@ -45,7 +45,7 @@ class selTest(unittest.TestCase):
         # Ensure given path exists, if not create it
         try:
             os.makedirs(path)
-	    file = open(path,'/.git_keep_this', 'w')
+	    file = open(path,'/.git_keep_this', 0777)
 	    file.write('')
 	    file.close()
             
@@ -54,7 +54,7 @@ class selTest(unittest.TestCase):
                 raise
     def start_selenium_server_standalone(self):
         null=open('/dev/null','wb')
-        cmd = ['java','-jar',os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','res','selenium-2.26.0','selenium-server-standalone-2.26.0.jar')]
+        cmd = ['java','-Djava.security.egd=file:/dev/./urandom','-jar',os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','res','selenium-2.26.0','selenium-server-standalone-2.26.0.jar')]
         proc = subprocess.Popen(cmd,stderr=null,stdout=null,preexec_fn=os.setsid)
         return proc
     
