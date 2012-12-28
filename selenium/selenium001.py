@@ -128,13 +128,16 @@ class selTest(unittest.TestCase):
 	self.driver.get('http://adhocracy.lan:5001')
 	self.driver.find_element_by_css_selector("#nav_login > a").click()
 	
-	self.driver.find_element_by_name("login").clear()
-	self.driver.find_element_by_name("login").send_keys("test2")	
-
-	self.driver.find_element_by_name("password").clear()
-	self.driver.find_element_by_name("password").send_keys("test")
+	i_login = self.driver.find_element_by_css_selector("input[name=\"login\"]")
+	i_login.clear()
+	i_login.send_keys("test2")
 	
-	self.driver.find_element_by_css_selector("input[type=\"submit\"]").click()	
+	i_password = self.driver.find_element_by_css_selector("input[name=\"password\"]")
+	i_password.clear()
+	i_password.send_keys("test")	
+	
+	b_submit = self.driver.find_element_by_css_selector("input[type=\"submit\"]")
+	b_submit.click()
 
 	
 	pwwrong = self.is_text_present2("Benutzername oder falsches Passwort.") # TODO: Multilanguage?
