@@ -33,7 +33,14 @@ class selTest(unittest.TestCase):
     # Login / password for non-admin-user
     adhocracy_login_user = {'username':'user','password':'pass'}
     
-    def is_text_present2(self, text):
+    login_as_admin = True # TODO: Read command line argument to set the user-type
+    
+    if login_as_admin:
+	adhocracy_login = {'username':adhocracy_login_admin['username'],'password':adhocracy_login_admin['password']}
+    else:
+	adhocracy_login = {'username':adhocracy_login_user['username'],'password':adhocracy_login_user['password']}
+	
+    def is_text_present(self, text):
 	try:
 	    el = self.driver.find_element_by_tag_name("body")
 	except NoSuchElementException, e:
@@ -48,6 +55,13 @@ class selTest(unittest.TestCase):
 	    return False
 	return True
     
+    def check_element_exists_by_id(self,dat):
+	try:
+	    self.driver.find_element_by_id(dat)
+	except NoSuchElementException:
+	    return False
+	return True	
+    
     def start_selenium_server_standalone(self):
         null=open('/dev/null','wb')
         cmd = ['java','-Djava.security.egd=file:/dev/./urandom','-jar',os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','res','selenium-2.26.0','selenium-server-standalone-2.26.0.jar')]
@@ -59,9 +73,6 @@ class selTest(unittest.TestCase):
     
     def start_adhocracy(self):
         null=open('/dev/null','wb')
-        ## __file__
-        ## os.path.dirname(__file__)
-        ## os.pazh.join
         proc = subprocess.Popen(selTest.paster_dir+'paster_interactive.sh',stderr=null, stdout=null,preexec_fn=os.setsid)
         return proc
         
@@ -120,20 +131,22 @@ class selTest(unittest.TestCase):
 	l_login.click()
 	
 	i_login = self.driver.find_element_by_css_selector('input[name="login"]')
-	i_login.send_keys("test2")
+	i_login.send_keys(self.adhocracy_login['username'])
 	
 	i_password = self.driver.find_element_by_css_selector('input[name="password"]')
-	i_password.send_keys("test")	
+	i_password.send_keys(self.adhocracy_login['password'])	
 	
 	b_submit = self.driver.find_element_by_xpath('//form[@id="login"]//input[@type="submit"]')
 	b_submit.click()
 
 	# Check if login was successful
 	pwwrong = self.check_element_exists_by_xpath('//form[@id="login"]//input[@type="submit"]')
-	if pwwrong:    
+	loginOk = self.check_element_exists_by_id('user_menu')
+	
+	if pwwrong or not loginOk:    
 	    # Login failed
-	    raise Exception("Login failed (username="+self.adhocracy_login_admin['username']+")")
-    
+	    raise Exception("Login failed (username="+self.adhocracy_login['username']+")")
+	    
 if __name__ == '__main__':
     unittest.main()
 
