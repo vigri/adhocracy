@@ -41,13 +41,7 @@ class selTest(unittest.TestCase):
 	    return False
 	return text in el.text    
 
-    def check_folder(self,path):
-        # Ensure given path exists, if not create it
-        try:
-            os.makedirs(path)            
-        except OSError as exception:
-            if exception.errno != errno.EEXIST:
-                raise
+    
     def start_selenium_server_standalone(self):
         null=open('/dev/null','wb')
         cmd = ['java','-Djava.security.egd=file:/dev/./urandom','-jar',os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','res','selenium-2.26.0','selenium-server-standalone-2.26.0.jar')]
@@ -76,10 +70,7 @@ class selTest(unittest.TestCase):
         if errors:    
             # Fehler
             raise Exception("\n".join(errors))
-        
-        # Ensure bak_db folder exists, if not create it
-        self.check_folder('bak_db')
-        
+	
         # Database isolation - trivial - copy database to some other destination
         shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
     
@@ -137,7 +128,7 @@ class selTest(unittest.TestCase):
 	i_password.clear()
 	i_password.send_keys("test")	
 	
-	b_submit = self.driver.find_element_by_css_selector("input[type=\"submit\"]")
+	b_submit = self.driver.find_element_by_xpath("//input[@type=\"submit\"][@value=\"Anmelden\"]")
 	b_submit.click()
 
 	
