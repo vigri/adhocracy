@@ -67,8 +67,7 @@ class selTest(unittest.TestCase):
         self.verificationErrors = []
 	
         errors = check_port_free([4444,5001], opts_kill='pgid', opts_gracePeriod=10)
-        if errors:    
-            # Fehler
+        if errors:
             raise Exception("\n".join(errors))
 	
         # Database isolation - trivial - copy database to some other destination
@@ -104,15 +103,9 @@ class selTest(unittest.TestCase):
         # Database isolation - trivial - restore our saved database
         shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
         
-    def xtest_title_google(self):
-        self.driver.get('http://google.com')
-        title_tag = self.driver.find_element_by_tag_name('title')
-        self.assertEqual(title_tag.text, 'Google')
-        
     def xtest_title_adhocracy(self):
         self.driver.get('http://adhocracy.lan:5001')
-        title_tag = self.driver.find_element_by_tag_name('title')
-        #self.assertEqual(title_tag.text, 'Adhocracy')        
+        title_tag = self.driver.find_element_by_tag_name('title')        
         self.assertTrue("Adhocracy" in title_tag.text)
     
     def test_login(self):
@@ -121,11 +114,9 @@ class selTest(unittest.TestCase):
 	l_login.click()
 	
 	i_login = self.driver.find_element_by_css_selector("input[name=\"login\"]")
-	i_login.clear()
 	i_login.send_keys("test2")
 	
 	i_password = self.driver.find_element_by_css_selector("input[name=\"password\"]")
-	i_password.clear()
 	i_password.send_keys("test")	
 	
 	b_submit = self.driver.find_element_by_xpath("//input[@type=\"submit\"][@value=\"Anmelden\"]")
@@ -136,9 +127,8 @@ class selTest(unittest.TestCase):
 	# TODO: Umlauts are not accepted in search-string. "Ungültiger Benutzername oder flasches Passwort."
 	
 	if pwwrong:    
-	    # Fehler
-	    raise Exception(self.driver.page_source)	# Temp
-	    #Username or password wrong ("+self.adhocracy_login_admin['username']+")"
+	    # Wrong username or password
+	    raise Exception("Username or password wrong ("+self.adhocracy_login_admin['username']+")")	# Temp
     
 if __name__ == '__main__':
     unittest.main()
