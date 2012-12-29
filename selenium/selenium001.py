@@ -10,10 +10,9 @@ import signal
 import errno
 import re
 
-
-
 from check_port_free import check_port_free   
 from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException  
 
 if not hasattr(unittest.TestCase, 'assertRegexpMatches'): # Python<2.7
     unittest.TestCase.assertRegexpMatches = (lambda self, text, epat:
@@ -41,6 +40,13 @@ class selTest(unittest.TestCase):
 	    return False
 	return text in el.text    
 
+    def check_element_exists_by_xpath(self,xpath):
+	# Check if an element exists by given xpath	
+	try:
+	    self.driver.find_element_by_xpath(xpath),
+	except NoSuchElementException:
+	    return False
+	return True
     
     def start_selenium_server_standalone(self):
         null=open('/dev/null','wb')
@@ -113,22 +119,20 @@ class selTest(unittest.TestCase):
 	l_login = self.driver.find_element_by_css_selector("#nav_login > a")
 	l_login.click()
 	
-	i_login = self.driver.find_element_by_css_selector("input[name=\"login\"]")
+	i_login = self.driver.find_element_by_css_selector('input[name="login"]')
 	i_login.send_keys("test2")
 	
-	i_password = self.driver.find_element_by_css_selector("input[name=\"password\"]")
+	i_password = self.driver.find_element_by_css_selector('input[name="password"]')
 	i_password.send_keys("test")	
 	
-	b_submit = self.driver.find_element_by_xpath("//input[@type=\"submit\"][@value=\"Anmelden\"]")
+	b_submit = self.driver.find_element_by_xpath('//form[@id="login"]//input[@type="submit"]')
 	b_submit.click()
 
-	
-	pwwrong = self.is_text_present2("Benutzername oder falsches Passwort.") # TODO: Multilanguage?
-	# TODO: Umlauts are not accepted in search-string. "Ungültiger Benutzername oder flasches Passwort."
-	
+	# Check if login was successful
+	pwwrong = self.check_element_exists_by_xpath('//form[@id="login"]//input[@type="submit"]')
 	if pwwrong:    
-	    # Wrong username or password
-	    raise Exception("Username or password wrong ("+self.adhocracy_login_admin['username']+")")	# Temp
+	    # Login failed
+	    raise Exception("Login failed (username="+self.adhocracy_login_admin['username']+")")
     
 if __name__ == '__main__':
     unittest.main()
