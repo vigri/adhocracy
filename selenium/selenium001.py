@@ -146,7 +146,11 @@ class selTest(unittest.TestCase):
 	if pwwrong or not loginOk:    
 	    # Login failed
 	    raise Exception("Login failed (username="+self.adhocracy_login['username']+")")
-	    
+	
+	cookies = self.driver.get_cookies()
+	#for cookie in cookies:
+	#    cookie["name"] cookie["value"]
+
 if __name__ == '__main__':
     unittest.main()
 
