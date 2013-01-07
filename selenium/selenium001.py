@@ -9,6 +9,7 @@ import os
 import signal
 import errno
 import re
+import random
 
 from check_port_free import check_port_free   
 from selenium import webdriver
@@ -124,8 +125,37 @@ class selTest(unittest.TestCase):
         self.driver.get('http://adhocracy.lan:5001')
         title_tag = self.driver.find_element_by_tag_name('title')        
         self.assertTrue("Adhocracy" in title_tag.text)
-    
-    def test_login(self):
+	
+    def test_register(self):
+	
+	self.driver.get('http://adhocracy.lan:5001')
+	
+	b_register = self.driver.find_element_by_xpath('//div[@class="register"]//a[@class="button link_register_now"]')
+	b_register.click()	
+	
+	i_username = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="user_name"]')
+	i_username.send_keys("user"+str(random.randint(100000,999999)))		
+	
+	
+	i_email = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="email"]')
+	i_email.send_keys("user"+str(random.randint(100000,999999))+"@example.com")
+	
+	i_password = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="password"]')
+	i_password.send_keys("test")	
+	
+	i_password2 = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="password_confirm"]')
+	i_password2.send_keys("test")
+
+	b_submit = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@type="submit"]')
+	b_submit.click()  
+	
+	loginOk = self.check_element_exists_by_id('user_menu')
+	if not loginOk:
+	    # Login failed
+	    raise Exception("Registration failed (username=user1234567)")
+	
+
+    def xtest_login(self):
 	self.driver.get('http://adhocracy.lan:5001')
 	l_login = self.driver.find_element_by_css_selector("#nav_login > a")
 	l_login.click()
