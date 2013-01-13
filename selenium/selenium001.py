@@ -21,13 +21,11 @@ if not hasattr(unittest.TestCase, 'assertRegexpMatches'): # Python<2.7
 	
 	
 class selTest(unittest.TestCase):
-    # get adhocracy dir
-    adhocracy_dir_arr = os.path.dirname(os.path.abspath(__file__)).split(os.sep)
-    adhocracy_dir_arr_len = len(adhocracy_dir_arr)-3 # remove last 3 elements to ensure we have the 'root' of adhocracy
-    paster_dir_len = len(adhocracy_dir_arr)-4        # paster_interactive.sh is outside the adhocracy dir
-    adhocracy_dir = os.sep+os.path.join(*adhocracy_dir_arr[:adhocracy_dir_arr_len])+os.sep
-    paster_dir = os.sep+os.path.join(*adhocracy_dir_arr[:paster_dir_len])+os.sep
     
+    # get adhocracy and paster_interactive dir    
+    adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
+    paster_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..','..'))+os.sep
+
     # Login / password for admin-user
     adhocracy_login_admin = {'username':'test2','password':'test'}
     
@@ -79,9 +77,8 @@ class selTest(unittest.TestCase):
         
     def shutdown_adhocracy(self, pid):
         os.killpg(pid, signal.SIGTERM)    
-                  
+    
     def setUp(self):    
-
         self.verificationErrors = []
 	
         errors = check_port_free([4444,5001], opts_kill='pgid', opts_gracePeriod=10)
@@ -107,16 +104,16 @@ class selTest(unittest.TestCase):
                                         'version':'2',
                                         'javascriptEnabled': True
                         })
-        
-        
-    def tearDown(self):
-        self.driver.close()
+        #self.driver = webdriver.Firefox()
+    
+    def tearDown(cls): #tearDownClass
+        cls.driver.close()
 
         # Shutdown Selenium Server Standalone
-        self.shutdown_server(self.sel_server.pid)
+        cls.shutdown_server(cls.sel_server.pid)
         
         # Shutdown Adhocracy
-        self.shutdown_adhocracy(self.adhocracy.pid)        
+        cls.shutdown_adhocracy(cls.adhocracy.pid)        
 
         # Database isolation - trivial - restore our saved database
         shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
@@ -126,7 +123,7 @@ class selTest(unittest.TestCase):
         title_tag = self.driver.find_element_by_tag_name('title')        
         self.assertTrue("Adhocracy" in title_tag.text)
 	
-    def test_register(self):
+    def xtest_register(self):
 	
 	self.driver.get('http://adhocracy.lan:5001')
 	
@@ -134,11 +131,10 @@ class selTest(unittest.TestCase):
 	b_register.click()	
 	
 	i_username = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="user_name"]')
-	i_username.send_keys("user"+str(random.randint(100000,999999)))		
-	
+	i_username.send_keys("selenium_user_test")		
 	
 	i_email = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="email"]')
-	i_email.send_keys("user"+str(random.randint(100000,999999))+"@example.com")
+	i_email.send_keys("selenium_user_test@example.com")
 	
 	i_password = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="password"]')
 	i_password.send_keys("test")	
@@ -149,15 +145,13 @@ class selTest(unittest.TestCase):
 	b_submit = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@type="submit"]')
 	b_submit.click()  
 	
-	loginOk = self.check_element_exists_by_id('user_menu')
-	if not loginOk:
-	    # Login failed
-	    raise Exception("Registration failed (username=user1234567)")
-	
+	self.driver.find_element_by_id('user_menu')
 
-    def xtest_login(self):
+    def test_login(self):
+	
 	self.driver.get('http://adhocracy.lan:5001')
-	l_login = self.driver.find_element_by_css_selector("#nav_login > a")
+	
+	l_login = self.driver.find_element_by_css_selector('#nav_login > a')
 	l_login.click()
 	
 	i_login = self.driver.find_element_by_css_selector('input[name="login"]')
@@ -170,12 +164,7 @@ class selTest(unittest.TestCase):
 	b_submit.click()
 
 	# Check if login was successful
-	pwwrong = self.check_element_exists_by_xpath('//form[@id="login"]//input[@type="submit"]')
-	loginOk = self.check_element_exists_by_id('user_menu')
-	
-	if pwwrong or not loginOk:    
-	    # Login failed
-	    raise Exception("Login failed (username="+self.adhocracy_login['username']+")")
+	self.driver.find_element_by_id('user_menu')
 	
 	cookies = self.driver.get_cookies()
 	#for cookie in cookies:
