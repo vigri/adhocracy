@@ -18,9 +18,7 @@ from selenium.common.exceptions import NoSuchElementException
 if not hasattr(unittest.TestCase, 'assertRegexpMatches'): # Python<2.7
     unittest.TestCase.assertRegexpMatches = (lambda self, text, epat:
     self.assertTrue(re.match(epat, text)))
-    
-    
-    
+
     
 class selTest(unittest.TestCase):
     
@@ -84,10 +82,9 @@ class selTest(unittest.TestCase):
     
     def setUp(self):
         if not self.setup_done:
-            print "setup_done = false"
             selTest.setup_done = True
             
-            self.verificationErrors = []
+            selTest.verificationErrors = []
             
             errors = check_port_free([4444,5001], opts_kill='pgid', opts_gracePeriod=10)
             if errors:
@@ -97,25 +94,21 @@ class selTest(unittest.TestCase):
             shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
             
             # Start Selenium Server Standalone
-            self.sel_server = self.start_selenium_server_standalone()
+            selTest.sel_server = self.start_selenium_server_standalone()
             
             # Start Adhocracy
-            self.adhocracy = self.start_adhocracy()  
+            selTest.adhocracy = self.start_adhocracy()  
             
             errors = check_port_free([4444, 5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
             if errors:            
                 raise Exception("\n".join(errors))
                
-            self.driver = webdriver.Remote(
+            selTest.driver = webdriver.Remote(
             command_executor = 'http://127.0.0.1:4444/wd/hub',
             desired_capabilities={'browserName': 'htmlunit',
                                             'version':'2',
                                             'javascriptEnabled': True
                             })
-        else:
-            print "setup_done = true"
-        #self.driver = webdriver.Firefox()
-        #print self.setup_done
     def tearDown(self): #tearDownClass
         """self.driver.close()
         # Shutdown Selenium Server Standalone
@@ -178,10 +171,6 @@ class selTest(unittest.TestCase):
         cookies = self.driver.get_cookies()
         #for cookie in cookies:
         #    cookie["name"] cookie["value"]
-        
-    def xtxest_t1(self):
-        print "--- Test 1 ---"
-    def xtest_t2(self):
-        print "--- Test 2 ---"
+            
 if __name__ == '__main__':
     unittest.main()
