@@ -19,7 +19,13 @@ if not hasattr(unittest.TestCase, 'assertRegexpMatches'): # Python<2.7
     unittest.TestCase.assertRegexpMatches = (lambda self, text, epat:
     self.assertTrue(re.match(epat, text)))
     
+    
+    
+    
 class selTest(unittest.TestCase):
+    
+    setup_done = False
+    
     # get adhocracy and paster_interactive dir    
     adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
     paster_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..','..'))+os.sep
@@ -42,7 +48,7 @@ class selTest(unittest.TestCase):
             el = self.driver.feinigeind_element_by_tag_name("body")
         except NoSuchElementException, e:
             return False
-        return text in el.text    
+        return textnot in el.text    
     
     def check_element_exists_by_xpath(self,xpath):
         # Check if an element exists by given xpath
@@ -77,35 +83,41 @@ class selTest(unittest.TestCase):
         os.killpg(pid, signal.SIGTERM)    
     
     def setUp(self):
-        self.verificationErrors = []
-        
-        errors = check_port_free([4444,5001], opts_kill='pgid', opts_gracePeriod=10)
-        if errors:
-            raise Exception("\n".join(errors))
-        
-        # Database isolation - trivial - copy database to some other destination
-        shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
-        
-        # Start Selenium Server Standalone
-        self.sel_server = self.start_selenium_server_standalone()
-        
-        # Start Adhocracy
-        self.adhocracy = self.start_adhocracy()  
-        
-        errors = check_port_free([4444, 5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
-        if errors:            
-            raise Exception("\n".join(errors))
-           
-        self.driver = webdriver.Remote(
-        command_executor = 'http://127.0.0.1:4444/wd/hub',
-        desired_capabilities={'browserName': 'htmlunit',
-                                        'version':'2',
-                                        'javascriptEnabled': True
-                        })
-        #self.driver = webdriver.Firefox()
+        if not self.setup_done:
+            print "setup_done = false"
+            selTest.setup_done = True
             
+            self.verificationErrors = []
+            
+            errors = check_port_free([4444,5001], opts_kill='pgid', opts_gracePeriod=10)
+            if errors:
+                raise Exception("\n".join(errors))
+            
+            # Database isolation - trivial - copy database to some other destination
+            shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
+            
+            # Start Selenium Server Standalone
+            self.sel_server = self.start_selenium_server_standalone()
+            
+            # Start Adhocracy
+            self.adhocracy = self.start_adhocracy()  
+            
+            errors = check_port_free([4444, 5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
+            if errors:            
+                raise Exception("\n".join(errors))
+               
+            self.driver = webdriver.Remote(
+            command_executor = 'http://127.0.0.1:4444/wd/hub',
+            desired_capabilities={'browserName': 'htmlunit',
+                                            'version':'2',
+                                            'javascriptEnabled': True
+                            })
+        else:
+            print "setup_done = true"
+        #self.driver = webdriver.Firefox()
+        #print self.setup_done
     def tearDown(self): #tearDownClass
-        self.driver.close()
+        """self.driver.close()
         # Shutdown Selenium Server Standalone
         self.shutdown_server(self.sel_server.pid)
         
@@ -114,8 +126,9 @@ class selTest(unittest.TestCase):
         
         # Database isolation - trivial - restore our saved database
         shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
-        
-    def xtest_title_adhocracy(self):
+        """
+    def test_title_adhocracy(self):
+        print "Testing title..."
         self.driver.get('http://adhocracy.lan:5001')
         title_tag = self.driver.find_element_by_tag_name('title')        
         self.assertTrue("Adhocracy" in title_tag.text)
@@ -144,6 +157,7 @@ class selTest(unittest.TestCase):
         self.driver.find_element_by_id('user_menu')
         
     def test_login(self):
+        print "Testing login"
         self.driver.get('http://adhocracy.lan:5001')
         
         l_login = self.driver.find_element_by_css_selector('#nav_login > a')
@@ -165,5 +179,9 @@ class selTest(unittest.TestCase):
         #for cookie in cookies:
         #    cookie["name"] cookie["value"]
         
+    def xtxest_t1(self):
+        print "--- Test 1 ---"
+    def xtest_t2(self):
+        print "--- Test 2 ---"
 if __name__ == '__main__':
     unittest.main()
