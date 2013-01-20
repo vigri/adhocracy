@@ -14,6 +14,7 @@ import random
 from check_port_free import check_port_free   
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException  
+from selenium.webdriver.support.wait import WebDriverWait
 
 if not hasattr(unittest.TestCase, 'assertRegexpMatches'): # Python<2.7
     unittest.TestCase.assertRegexpMatches = (lambda self, text, epat:
@@ -23,6 +24,7 @@ if not hasattr(unittest.TestCase, 'assertRegexpMatches'): # Python<2.7
 class selTest(unittest.TestCase):
     
     setup_done = False
+    login_cookie = ""
     
     # get adhocracy and paster_interactive dir    
     adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
@@ -33,13 +35,6 @@ class selTest(unittest.TestCase):
     
     # Login / password for non-admin-user
     adhocracy_login_user = {'username':'user','password':'pass'}
-    
-    login_as_admin = True # TODO: Read command line argument to set the user-type
-    
-    if login_as_admin:
-        adhocracy_login = {'username':adhocracy_login_admin['username'],'password':adhocracy_login_admin['password']}
-    else:
-        adhocracy_login = {'username':adhocracy_login_user['username'],'password':adhocracy_login_user['password']}
     
     def is_text_present(self, text):
         try:
@@ -121,10 +116,21 @@ class selTest(unittest.TestCase):
         shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
         """
     def test_title_adhocracy(self):
-        print "Testing title..."
         self.driver.get('http://adhocracy.lan:5001')
         title_tag = self.driver.find_element_by_tag_name('title')        
         self.assertTrue("Adhocracy" in title_tag.text)
+    
+    def test_login(self):
+        # Just a test
+        print "first try"
+        self.ensure_login(True)
+        print self.login_cookie["value"]
+        print "second try"
+        self.ensure_login(True)
+        print self.login_cookie["value"]
+        print "third try"
+        self.ensure_login(False)
+        print self.login_cookie["value"]
         
     def xtest_register(self):
         self.driver.get('http://adhocracy.lan:5001')
@@ -149,9 +155,9 @@ class selTest(unittest.TestCase):
         
         self.driver.find_element_by_id('user_menu')
         
-    def test_login(self):
-        print "Testing login"
+    def login_user(self):
         self.driver.get('http://adhocracy.lan:5001')
+        #print self.driver.page_source
         
         l_login = self.driver.find_element_by_css_selector('#nav_login > a')
         l_login.click()
@@ -164,13 +170,43 @@ class selTest(unittest.TestCase):
         
         b_submit = self.driver.find_element_by_xpath('//form[@id="login"]//input[@type="submit"]')
         b_submit.click()
-        
+        #    self.driver.wait_for_page_to_load("20000")        
         # Check if login was successful
-        self.driver.find_element_by_id('user_menu')
         
-        cookies = self.driver.get_cookies()
-        #for cookie in cookies:
-        #    cookie["name"] cookie["value"]
+        #element = WebDriverWait(self.webdriver, 10).until(lambda driver : driver.find_element_by_id('user_menu'))
+        w = WebDriverWait(self.driver, 10)
+        w.until(lambda driver: driver.find_element_by_id('user_menu'))
+
+        selTest.cookies = self.driver.get_cookies()
+        for cookie in selTest.cookies:
+            if cookie["name"] == "adhocracy_login":
+                selTest.login_cookie = cookie
+                
+    def ensure_login(self, login_as_admin):
+        if selTest.login_cookie:
+            print "we are logged in"
+            if self.adhocracy_login['admin'] == login_as_admin:
+                print "nothing to do"
+            else:
+                print "new login"
+                selTest.login_cookie = ""
+                selTest.driver.delete_cookie("adhocracy_login")
+                
+                if login_as_admin:
+                    self.adhocracy_login = {'username':self.adhocracy_login_admin['username'],'password':self.adhocracy_login_admin['password'],'admin':True}
+                else:
+                    self.adhocracy_login = {'username':self.adhocracy_login_user['username'],'password':self.adhocracy_login_user['password'],'admin':False}
+                self.login_user()
+        else:
+            print "need to login"
+            selTest.login_cookie = ""
+            selTest.driver.delete_cookie("adhocracy_login")
+            
+            if login_as_admin:
+                self.adhocracy_login = {'username':self.adhocracy_login_admin['username'],'password':self.adhocracy_login_admin['password'],'admin':True}
+            else:
+                self.adhocracy_login = {'username':self.adhocracy_login_user['username'],'password':self.adhocracy_login_user['password'],'admin':False}
+            self.login_user()
             
 if __name__ == '__main__':
     unittest.main()
