@@ -9,6 +9,12 @@ import os
 import signal
 import errno
 import re
+import httplib
+import urllib
+
+
+import urllib2
+import json
 
 from check_port_free import check_port_free
 from selenium import webdriver
@@ -30,7 +36,7 @@ class selTest(unittest.TestCase):
     paster_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..','..'))+os.sep
 
     # Login / password for admin-user
-    adhocracy_login_admin = {'username':'test2','password':'test'}
+    adhocracy_login_admin = {'username':'admin','password':'password'}
     
     # Login / password for non-admin-user
     adhocracy_login_user = {'username':'test2','password':'test'}
@@ -103,6 +109,7 @@ class selTest(unittest.TestCase):
                                             'version':'2',
                                             'javascriptEnabled': True
                             })
+
     def tearDown(self): #tearDownClass
         """self.driver.close()
         # Shutdown Selenium Server Standalone
@@ -114,12 +121,12 @@ class selTest(unittest.TestCase):
         # Database isolation - trivial - restore our saved database
         shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
         """
-    def test_title_adhocracy(self):
+    def xtest_title_adhocracy(self):
         self.driver.get('http://adhocracy.lan:5001')
         title_tag = self.driver.find_element_by_tag_name('title')
         self.assertTrue("Adhocracy" in title_tag.text)
         
-    def test_login(self):
+    def xtest_login(self):
         # Login as: admin, admin, non-admin
         self.ensure_login(True)
         self.ensure_login(True)
@@ -150,7 +157,7 @@ class selTest(unittest.TestCase):
         
     def login_user(self):
         self.driver.get('http://adhocracy.lan:5001')
-        
+
         l_login = self.driver.find_element_by_css_selector('#nav_login > a')
         l_login.click()
         WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_css_selector('input[name="login"]'))
@@ -193,6 +200,20 @@ class selTest(unittest.TestCase):
             else:
                 selTest.adhocracy_login = {'username':self.adhocracy_login_user['username'],'password':self.adhocracy_login_user['password'],'admin':False}
             self.login_user()
-            
+
+    def gist_write(self,desc, content):
+        d = json.dumps({
+            "description":desc,
+            "public":False,
+            "files":{
+                     "log":{
+                            "content":content
+                            }
+                     }
+            })
+        res = urllib2.urlopen('https://api.github.com/gists',d).read()
+        resd = json.loads(res)
+        return resd['html_url']
+
 if __name__ == '__main__':
     unittest.main()
