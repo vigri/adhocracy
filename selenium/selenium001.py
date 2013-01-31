@@ -13,7 +13,7 @@ import httplib
 import urllib
 import urllib2
 import json
-
+import datetime
 
 
 from check_port_free import check_port_free
@@ -21,6 +21,34 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
 
+def _displayInformation(e):
+    dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print 'Exception: %r' % e
+    print 'Sourcecode of website: ' + gist_write("Selenium driven test\n"+dt +"\n%r" % e+"]",selTest.driver.page_source,dt,"html")
+    print 'Screenshot: TODO' 
+
+def additionalInfoOnException(func):
+    def test_wrapper(self):
+        try:
+            func(self)
+        except BaseException as e:
+            _displayInformation(e)
+            raise
+    return test_wrapper
+
+def gist_write(desc, content,date,type):
+    d = json.dumps({
+        "description":desc,
+        "public":False,
+        "files":{
+                 date+"."+type:{
+                        "content":content
+                        }
+                }
+    })
+    res = urllib2.urlopen('https://api.github.com/gists',d).read()
+    resd = json.loads(res)
+    return resd['html_url']
 
 class selTest(unittest.TestCase):
     setup_done = False
@@ -101,12 +129,15 @@ class selTest(unittest.TestCase):
         # Database isolation - trivial - restore our saved database
         shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
         """
-    def xtest_title_adhocracy(self):
+
+    @additionalInfoOnException
+    def test_title_adhocracy(self):
         self.driver.get('http://adhocracy.lan:5001')
         WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_tag_name('title'))
         title_tag = self.driver.find_element_by_tag_name('title')
-        self.assertTrue("Adhocracy" in title_tag.text)
+        self.assertTrue("AdhocraCYcy" in title_tag.text)
 
+    @additionalInfoOnException
     def xtest_register(self):
         self.driver.get('http://adhocracy.lan:5001')
 
@@ -132,6 +163,7 @@ class selTest(unittest.TestCase):
 
         WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_id('user_menu'))
 
+    @additionalInfoOnException
     def login_user(self):
         self.driver.get('http://adhocracy.lan:5001')
         WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_css_selector('#nav_login > a'))
@@ -176,20 +208,6 @@ class selTest(unittest.TestCase):
             else:
                 selTest.adhocracy_login = {'username':self.adhocracy_login_user['username'],'password':self.adhocracy_login_user['password'],'admin':False}
             self.login_user()
-
-    def gist_write(self,desc, content):
-        d = json.dumps({
-            "description":desc,
-            "public":False,
-            "files":{
-                     "log":{
-                            "content":content
-                            }
-                    }
-        })
-        res = urllib2.urlopen('https://api.github.com/gists',d).read()
-        resd = json.loads(res)
-        return resd['html_url']
 
 if __name__ == '__main__':
     unittest.main()
