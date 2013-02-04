@@ -14,7 +14,7 @@ import urllib
 import urllib2
 import json
 import datetime
-
+import base64
 
 from check_port_free import check_port_free
 from selenium import webdriver
@@ -50,9 +50,24 @@ def gist_write(desc, content,date,type):
     resd = json.loads(res)
     return resd['html_url']
 
+def imgur_upload(path):
+    with open(path, 'rb') as f:
+        picture = base64.b64encode(f.read())
+        data = urllib.urlencode({ 'key' : selTest.apikey, 'image' : picture })
+        json_response = selTest.opener.open(selTest.url, data)
+        json_response = json.load(json_response)
+        #print json_response
+
 class selTest(unittest.TestCase):
     setup_done = False
     login_cookie = ""
+
+    clientId = 'x'
+    url = 'https://api.imgur.com/3/image'
+    apikey = 'x'
+    opener = urllib2.build_opener(urllib2.ProxyHandler({}))
+
+
 
     # get adhocracy and paster_interactive dir
     adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
@@ -131,7 +146,7 @@ class selTest(unittest.TestCase):
         """
 
     @additionalInfoOnException
-    def test_title_adhocracy(self):
+    def xtest_title_adhocracy(self):
         self.driver.get('http://adhocracy.lan:5001')
         WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_tag_name('title'))
         title_tag = self.driver.find_element_by_tag_name('title')
