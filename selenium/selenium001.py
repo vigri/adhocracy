@@ -81,10 +81,10 @@ class selTest(unittest.TestCase):
     
     def is_text_present(self, text):
         try:
-            el = self.driver.feinigeind_element_by_tag_name("body")
+            el = self.driver.find_element_by_tag_name("body")
         except NoSuchElementException, e:
             return False
-        return textnot in el.text    
+        return text in el.text    
 
     def start_selenium_server_standalone(self):
         null=open('/dev/null','wb')
@@ -223,6 +223,37 @@ class selTest(unittest.TestCase):
             else:
                 selTest.adhocracy_login = {'username':self.adhocracy_login_user['username'],'password':self.adhocracy_login_user['password'],'admin':False}
             self.login_user()
+
+    @additionalInfoOnException
+    def test_create_instance(self):
+        instanceDescription = "Selenium Test Instance"
+        self.ensure_login(login_as_admin=True)
+        self.driver.get('http://adhocracy.lan:5001')
+        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_css_selector('#nav_instances > a'))
+
+        l_instances = self.driver.find_element_by_css_selector('#nav_instances > a')
+        l_instances.click()
+        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_xpath('//div[@class="top_actions title"]//a[@class="button title add"]'))
+
+        l_instance_new = self.driver.find_element_by_xpath('//div[@class="top_actions title"]//a[@class="button title add"]')
+        l_instance_new.click()
+        
+        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_xpath('//form[@name="create_instance"]//input[@name="label"]'))
+        i_label = self.driver.find_element_by_xpath('//form[@name="create_instance"]//input[@name="label"]')
+        i_label.send_keys("test instance 2")
+
+        i_key = self.driver.find_element_by_xpath('//form[@name="create_instance"]//input[@name="key"]')
+        i_key.send_keys("testinst2")
+
+        t_description = self.driver.find_element_by_xpath('//form[@name="create_instance"]//textarea[@name="description"]')
+        t_description.send_keys(instanceDescription)
+
+        b_submit = self.driver.find_element_by_xpath('//form[@name="create_instance"]//button[@type="submit"]')
+        b_submit.click()
+        
+        # todo wait x seconds until check is performed
+        if not self.is_text_present(instanceDescription):
+            raise Exception("Creation of instance failed!")
 
 if __name__ == '__main__':
     unittest.main()
