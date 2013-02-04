@@ -23,8 +23,10 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 def _displayInformation(e):
     dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    url = gist_upload("Selenium driven test\n"+dt +"\n%r" % e+"]",selTest.driver.page_source,dt,"html")
+                      
     print 'Exception: %r' % e
-    print 'Sourcecode of website: ' + gist_write("Selenium driven test\n"+dt +"\n%r" % e+"]",selTest.driver.page_source,dt,"html")
+    print 'Sourcecode of website: ' + url
     print 'Screenshot: TODO' 
 
 def additionalInfoOnException(func):
@@ -36,12 +38,12 @@ def additionalInfoOnException(func):
             raise
     return test_wrapper
 
-def gist_write(desc, content,date,type):
+def gist_upload(desc, content,date,ext):
     d = json.dumps({
         "description":desc,
         "public":False,
         "files":{
-                 date+"."+type:{
+                 date+"."+ext:{
                         "content":content
                         }
                 }
