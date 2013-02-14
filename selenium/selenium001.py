@@ -27,8 +27,13 @@ def _displayInformation(e):
                       
     print 'Exception: %r' % e
     print 'Sourcecode of website: ' + url
-    print 'Screenshot: TODO' 
-    print imgur_upload(e.screen)
+    
+    """ Since htmlUnit has no screenshot-support the image upload only can be performed
+    if the browserName differs from 'htmlUnit'
+    """
+    if(selTest.driver.capabilities['browserName'] != "htmlunit"):
+        print 'Screenshot: '+ imgur_upload(e.screen)
+        #print 'Screenshot: '+ imgur_upload('/home/user/test.jpg')
 
 def additionalInfoOnException(func):
     def test_wrapper(self):
@@ -55,14 +60,18 @@ def gist_upload(desc, content,date,ext):
 
 def imgur_upload(picture):
     #with open(path, 'rb') as f:
-        #picture = base64.b64encode(f.read())
+    #picture = base64.b64encode(f.read())
     data = urllib.urlencode({ 'key' : selTest.apikey, 'image' : picture })
     req = urllib2.Request(selTest.url, data)
     req.add_header('Authorization', 'Client-ID ' + selTest.clientId)
     
     json_response = selTest.opener.open(req)
     json_response = json.load(json_response)
-    print json_response
+    
+    if(json_response['status'] == 200):
+        return json_response['data']['link']
+    else:
+        return "Error on upload"
 
 class selTest(unittest.TestCase):
     setup_done = False
@@ -117,7 +126,7 @@ class selTest(unittest.TestCase):
         os.killpg(pid, signal.SIGTERM)
 
     def start_adhocracy(self):
-        null=open('/dev/null','wb')
+        null=open('/dev/null','wb')  
         proc = subprocess.Popen(selTest.paster_dir+'paster_interactive.sh',stderr=null, stdout=null,preexec_fn=os.setsid)
         return proc
 
@@ -153,7 +162,6 @@ class selTest(unittest.TestCase):
                                             'version':'2',
                                             'javascriptEnabled': True
                             })
-
     def tearDown(self): #tearDownClass
         """self.driver.close()
         # Shutdown Selenium Server Standalone
@@ -171,7 +179,7 @@ class selTest(unittest.TestCase):
         self.driver.get('http://adhocracy.lan:5001')
         self.searchAndWait_by_tag_name('title')
         title_tag = self.driver.find_element_by_tag_name('title')
-        self.assertTrue("Adhocracy" in title_tag.text)
+        self.assertTrue("AdhocrCacy" in title_tag.text)
 
     @additionalInfoOnException
     def xtest_register(self):
