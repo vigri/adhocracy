@@ -28,6 +28,7 @@ def _displayInformation(e):
     print 'Exception: %r' % e
     print 'Sourcecode of website: ' + url
     print 'Screenshot: TODO' 
+    print imgur_upload(e.screen)
 
 def additionalInfoOnException(func):
     def test_wrapper(self):
@@ -52,21 +53,24 @@ def gist_upload(desc, content,date,ext):
     resd = json.loads(res)
     return resd['html_url']
 
-def imgur_upload(path):
-    with open(path, 'rb') as f:
-        picture = base64.b64encode(f.read())
-        data = urllib.urlencode({ 'key' : selTest.apikey, 'image' : picture })
-        json_response = selTest.opener.open(selTest.url, data)
-        json_response = json.load(json_response)
-        #print json_response
+def imgur_upload(picture):
+    #with open(path, 'rb') as f:
+        #picture = base64.b64encode(f.read())
+    data = urllib.urlencode({ 'key' : selTest.apikey, 'image' : picture })
+    req = urllib2.Request(selTest.url, data)
+    req.add_header('Authorization', 'Client-ID ' + selTest.clientId)
+    
+    json_response = selTest.opener.open(req)
+    json_response = json.load(json_response)
+    print json_response
 
 class selTest(unittest.TestCase):
     setup_done = False
     login_cookie = ""
 
-    clientId = 'x'
+    clientId = 'b96e44dc87cf435'
     url = 'https://api.imgur.com/3/image'
-    apikey = 'x'
+    apikey = 'f48846809cc73b8bcabbd41335a08525085ed947'
     opener = urllib2.build_opener(urllib2.ProxyHandler({}))
 
 
@@ -81,6 +85,21 @@ class selTest(unittest.TestCase):
     # Login / password for non-admin-user
     adhocracy_login_user = {'username':'test2','password':'test'}
     
+    def searchAndWait_xpath(self, xpath, wait=10):
+        func = lambda driver: driver.find_element_by_xpath(xpath)
+        WebDriverWait(self.driver, wait).until(func)
+        return func(self.driver)
+
+    def searchAndWait_css(self, xpath, wait=10):
+        func = lambda driver: driver.find_element_by_css_selector(xpath)
+        WebDriverWait(self.driver, wait).until(func)
+        return func(self.driver)
+
+    def searchAndWait_by_tag_name(self, tagName, wait=10):
+        func = lambda driver: driver.find_element_by_tag_name(tagName)
+        WebDriverWait(self.driver, wait).until(func)
+        return func(self.driver)
+
     def is_text_present(self, text):
         try:
             el = self.driver.find_element_by_tag_name("body")
@@ -148,21 +167,21 @@ class selTest(unittest.TestCase):
         """
 
     @additionalInfoOnException
-    def xtest_title_adhocracy(self):
+    def test_title_adhocracy(self):
         self.driver.get('http://adhocracy.lan:5001')
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_tag_name('title'))
+        self.searchAndWait_by_tag_name('title')
         title_tag = self.driver.find_element_by_tag_name('title')
-        self.assertTrue("AdhocraCYcy" in title_tag.text)
+        self.assertTrue("Adhocracy" in title_tag.text)
 
     @additionalInfoOnException
     def xtest_register(self):
         self.driver.get('http://adhocracy.lan:5001')
 
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_xpath('//div[@class="register"]//a[@class="button link_register_now"]'))
+        self.searchAndWait_css('//div[@class="register"]//a[@class="button link_register_now"]')
         b_register = self.driver.find_element_by_xpath('//div[@class="register"]//a[@class="button link_register_now"]')
         b_register.click()
 
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="user_name"]'))
+        self.searchAndWait_css('//form[@name="create_user"]//input[@name="user_name"]')
         i_username = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="user_name"]')
         i_username.send_keys("selenium_user_test")
 
@@ -178,16 +197,16 @@ class selTest(unittest.TestCase):
         b_submit = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@type="submit"]')
         b_submit.click()
 
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_id('user_menu'))
+        self.searchAndWait_css('#user_menu')
 
     @additionalInfoOnException
     def login_user(self):
         self.driver.get('http://adhocracy.lan:5001')
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_css_selector('#nav_login > a'))
-
+        self.searchAndWait_css('#nav_login > a')
+        
         l_login = self.driver.find_element_by_css_selector('#nav_login > a')
         l_login.click()
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_css_selector('input[name="login"]'))
+        self.searchAndWait_css('input[name="login"]')
 
         i_login = self.driver.find_element_by_css_selector('input[name="login"]')
         i_login.send_keys(self.adhocracy_login['username'])
@@ -198,12 +217,15 @@ class selTest(unittest.TestCase):
         b_submit = self.driver.find_element_by_xpath('//form[@id="login"]//input[@type="submit"]')
         b_submit.click()
 
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_id('user_menu'))
+        self.searchAndWait_css('#user_menu')
 
         selTest.cookies = self.driver.get_cookies()
         for cookie in selTest.cookies:
             if cookie["name"] == "adhocracy_login":
                 selTest.login_cookie = cookie
+
+    def test_test11(self):
+        self.ensure_login(True)
 
     def ensure_login(self, login_as_admin):
         # check if the user is currently logged in
@@ -227,20 +249,20 @@ class selTest(unittest.TestCase):
             self.login_user()
 
     @additionalInfoOnException
-    def test_create_instance(self):
+    def xtest_create_instance(self):
         instanceDescription = "Selenium Test Instance"
         self.ensure_login(login_as_admin=True)
         self.driver.get('http://adhocracy.lan:5001')
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_css_selector('#nav_instances > a'))
+        self.searchAndWait_css('#nav_instances > a')
 
         l_instances = self.driver.find_element_by_css_selector('#nav_instances > a')
         l_instances.click()
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_xpath('//div[@class="top_actions title"]//a[@class="button title add"]'))
+        self.searchAndWait_xpath('//div[@class="top_actions title"]//a[@class="button title add"]')
 
         l_instance_new = self.driver.find_element_by_xpath('//div[@class="top_actions title"]//a[@class="button title add"]')
         l_instance_new.click()
-        
-        WebDriverWait(self.driver, 10).until(lambda driver: driver.find_element_by_xpath('//form[@name="create_instance"]//input[@name="label"]'))
+        self.searchAndWait_xpath('//form[@name="create_instance"]//input[@name="label"]')
+
         i_label = self.driver.find_element_by_xpath('//form[@name="create_instance"]//input[@name="label"]')
         i_label.send_keys("test instance 2")
 
@@ -250,12 +272,14 @@ class selTest(unittest.TestCase):
         t_description = self.driver.find_element_by_xpath('//form[@name="create_instance"]//textarea[@name="description"]')
         t_description.send_keys(instanceDescription)
 
-        b_submit = self.driver.find_element_by_xpath('//form[@name="create_instance"]//button[@type="submit"]')
+        b_submit = self.driver.find_element_by_xpath('//form[@name="create_instance"]//bu1tton[@type="submit"]')
         b_submit.click()
         
         # todo wait x seconds until check is performed
         if not self.is_text_present(instanceDescription):
             raise Exception("Creation of instance failed!")
 
+    def xtest_upload(self):
+        self.imgur_upload('')
 if __name__ == '__main__':
     unittest.main()
