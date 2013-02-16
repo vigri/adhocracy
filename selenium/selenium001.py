@@ -177,14 +177,14 @@ class selTest(unittest.TestCase):
 
     @additionalInfoOnException
     def test_title_adhocracy(self):
-        self.driver.get('http://adhocracy.lan:5001')
+        self.loadPage()
         self.searchAndWait_by_tag_name('title')
         title_tag = self.driver.find_element_by_tag_name('title')
-        self.assertTrue("AdhocrCacy" in title_tag.text)
+        self.assertTrue("Adhocracy" in title_tag.text)
 
     @additionalInfoOnException
     def xtest_register(self):
-        self.driver.get('http://adhocracy.lan:5001')
+        self.loadPage()
 
         self.searchAndWait_css('//div[@class="register"]//a[@class="button link_register_now"]')
         b_register = self.driver.find_element_by_xpath('//div[@class="register"]//a[@class="button link_register_now"]')
@@ -210,7 +210,7 @@ class selTest(unittest.TestCase):
 
     @additionalInfoOnException
     def login_user(self):
-        self.driver.get('http://adhocracy.lan:5001')
+        self.loadPage()
         self.searchAndWait_css('#nav_login > a')
         
         l_login = self.driver.find_element_by_css_selector('#nav_login > a')
@@ -258,7 +258,7 @@ class selTest(unittest.TestCase):
     def xtest_create_instance(self):
         instanceDescription = "Selenium Test Instance"
         self.ensure_login(login_as_admin=True)
-        self.driver.get('http://adhocracy.lan:5001')
+        self.loadPage()
         self.searchAndWait_css('#nav_instances > a')
 
         l_instances = self.driver.find_element_by_css_selector('#nav_instances > a')
@@ -284,6 +284,9 @@ class selTest(unittest.TestCase):
         # todo wait x seconds until check is performed
         if not self.is_text_present(instanceDescription):
             raise Exception("Creation of instance failed!")
+
+    def loadPage(self,path=""):
+        self.driver.get('http://adhocracy.lan:5001'+path)
 
 if __name__ == '__main__':
     unittest.main()
