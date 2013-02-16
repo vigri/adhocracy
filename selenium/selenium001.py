@@ -31,9 +31,10 @@ def _displayInformation(e):
     """ Since htmlUnit has no screenshot-support the image upload only can be performed
     if the browserName differs from 'htmlUnit'
     """
-    if(selTest.driver.capabilities['browserName'] != "htmlunit"):
+    try:
         print 'Screenshot: '+ imgur_upload(e.screen)
-        #print 'Screenshot: '+ imgur_upload('/home/user/test.jpg')
+    except AttributeError:
+        print 'Screenshot: not supported'
 
 def additionalInfoOnException(func):
     def test_wrapper(self):
@@ -60,12 +61,12 @@ def gist_upload(desc, content,date,ext):
 
 def imgur_upload(picture):
     #with open(path, 'rb') as f:
-    #picture = base64.b64encode(f.read())
+        #picture = base64.b64encode(f.read())
     data = urllib.urlencode({ 'key' : selTest.apikey, 'image' : picture })
     req = urllib2.Request(selTest.url, data)
     req.add_header('Authorization', 'Client-ID ' + selTest.clientId)
     
-    json_response = selTest.opener.open(req)
+    json_response = urllib2.urlopen(req)
     json_response = json.load(json_response)
     
     if(json_response['status'] == 200):
@@ -232,9 +233,6 @@ class selTest(unittest.TestCase):
             if cookie["name"] == "adhocracy_login":
                 selTest.login_cookie = cookie
 
-    def test_test11(self):
-        self.ensure_login(True)
-
     def ensure_login(self, login_as_admin):
         # check if the user is currently logged in
         if selTest.login_cookie:
@@ -287,7 +285,5 @@ class selTest(unittest.TestCase):
         if not self.is_text_present(instanceDescription):
             raise Exception("Creation of instance failed!")
 
-    def xtest_upload(self):
-        self.imgur_upload('')
 if __name__ == '__main__':
     unittest.main()
