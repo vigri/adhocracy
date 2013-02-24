@@ -16,6 +16,8 @@ import json
 import datetime
 import base64
 
+import basicTests
+
 from check_port_free import check_port_free
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -31,10 +33,10 @@ def _displayInformation(e):
     """ Since htmlUnit has no screenshot-support the image upload only can be performed
     if the browserName differs from 'htmlUnit'
     """
-    try:
-        print 'Screenshot: '+ imgur_upload(e.screen)
-    except AttributeError:
-        print 'Screenshot: not supported'
+    #try:
+    #    print 'Screenshot: '+ imgur_upload(e.screen)
+    #except Exception:
+    #    print 'Screenshot: not supported'
 
 def additionalInfoOnException(func):
     def test_wrapper(self):
@@ -175,55 +177,26 @@ class selTest(unittest.TestCase):
         shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
         """
 
-    @additionalInfoOnException
-    def test_title_adhocracy(self):
-        self.loadPage()
-        self.searchAndWait_by_tag_name('title')
-        title_tag = self.driver.find_element_by_tag_name('title')
-        self.assertTrue("Adhocracy" in title_tag.text)
 
-    @additionalInfoOnException
-    def xtest_register(self):
-        self.loadPage()
+    
 
-        self.searchAndWait_css('//div[@class="register"]//a[@class="button link_register_now"]')
-        b_register = self.driver.find_element_by_xpath('//div[@class="register"]//a[@class="button link_register_now"]')
-        b_register.click()
 
-        self.searchAndWait_css('//form[@name="create_user"]//input[@name="user_name"]')
-        i_username = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="user_name"]')
-        i_username.send_keys("selenium_user_test")
-
-        i_email = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="email"]')
-        i_email.send_keys("selenium_user_test@example.com")
-
-        i_password = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="password"]')
-        i_password.send_keys("test")
-
-        i_password2 = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@name="password_confirm"]')
-        i_password2.send_keys("test")
-
-        b_submit = self.driver.find_element_by_xpath('//form[@name="create_user"]//input[@type="submit"]')
-        b_submit.click()
-
-        self.searchAndWait_css('#user_menu')
+    
 
     @additionalInfoOnException
     def login_user(self):
         self.loadPage()
-        self.searchAndWait_css('#nav_login > a')
         
-        l_login = self.driver.find_element_by_css_selector('#nav_login > a')
+        l_login = self.searchAndWait_css('#nav_login > a')
         l_login.click()
-        self.searchAndWait_css('input[name="login"]')
-
-        i_login = self.driver.find_element_by_css_selector('input[name="login"]')
+        
+        i_login = self.searchAndWait_css('input[name="login"]')
         i_login.send_keys(self.adhocracy_login['username'])
 
-        i_password = self.driver.find_element_by_css_selector('input[name="password"]')
+        i_password = self.searchAndWait_css('input[name="password"]')
         i_password.send_keys(self.adhocracy_login['password'])
 
-        b_submit = self.driver.find_element_by_xpath('//form[@id="login"]//input[@type="submit"]')
+        b_submit = self.searchAndWait_css('form#login input[type="submit"]') #self.driver.find_element_by_xpath('//form[@id="login"]//input[@type="submit"]')
         b_submit.click()
 
         self.searchAndWait_css('#user_menu')
@@ -254,36 +227,7 @@ class selTest(unittest.TestCase):
                 selTest.adhocracy_login = {'username':self.adhocracy_login_user['username'],'password':self.adhocracy_login_user['password'],'admin':False}
             self.login_user()
 
-    @additionalInfoOnException
-    def xtest_create_instance(self):
-        instanceDescription = "Selenium Test Instance"
-        self.ensure_login(login_as_admin=True)
-        self.loadPage()
-        self.searchAndWait_css('#nav_instances > a')
-
-        l_instances = self.driver.find_element_by_css_selector('#nav_instances > a')
-        l_instances.click()
-        self.searchAndWait_xpath('//div[@class="top_actions title"]//a[@class="button title add"]')
-
-        l_instance_new = self.driver.find_element_by_xpath('//div[@class="top_actions title"]//a[@class="button title add"]')
-        l_instance_new.click()
-        self.searchAndWait_xpath('//form[@name="create_instance"]//input[@name="label"]')
-
-        i_label = self.driver.find_element_by_xpath('//form[@name="create_instance"]//input[@name="label"]')
-        i_label.send_keys("test instance 2")
-
-        i_key = self.driver.find_element_by_xpath('//form[@name="create_instance"]//input[@name="key"]')
-        i_key.send_keys("testinst2")
-
-        t_description = self.driver.find_element_by_xpath('//form[@name="create_instance"]//textarea[@name="description"]')
-        t_description.send_keys(instanceDescription)
-
-        b_submit = self.driver.find_element_by_xpath('//form[@name="create_instance"]//bu1tton[@type="submit"]')
-        b_submit.click()
-        
-        # todo wait x seconds until check is performed
-        if not self.is_text_present(instanceDescription):
-            raise Exception("Creation of instance failed!")
+    
 
     def loadPage(self,path=""):
         self.driver.get('http://adhocracy.lan:5001'+path)
