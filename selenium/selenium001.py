@@ -178,10 +178,33 @@ class selTest(unittest.TestCase):
         """
 
 
-    
-
     @additionalInfoOnException
-    def test_create_proposal(self):
+    def test_create_proposal_comment(self):
+        instance_name = "my instance"
+        proposal_name = "new test proposal"
+        self.ensure_login(login_as_admin=True)
+        self.loadPage()
+        #self.ensure_instance_exists(instance_name);
+        #self.ensure_proposal_exists(proposal_name);
+
+        self.loadPage("/i/myinstance/proposal/23-new_test_proposal")
+
+
+        t_description = self.driver.find_element_by_xpath('//form[@name="new_comment"]//textarea[@name="text"]')
+        t_description.send_keys("Test comment")
+        
+        
+        
+        
+        b_submit = self.driver.find_element_by_xpath('//form[@name="new_comment"]//input[@type="submit"]')
+        b_submit.click()
+        
+        self.searchAndWait_css('a[id="start-discussion-button"]')
+
+
+
+
+    def _test_create_proposal(self,newProposalName='newTestProposal12345'):
         # TODO: Fails if proposal exists
         # <span class="error-message">An entry with this title already exists</span>
 
@@ -209,7 +232,7 @@ class selTest(unittest.TestCase):
         l_new_proposal.click()
         
         i_label = self.driver.find_element_by_xpath('//form[@name="create_proposal"]//input[@name="label"]')
-        i_label.send_keys("new test proposal")
+        i_label.send_keys(newProposalName)
         
         for option in self.driver.find_elements_by_tag_name('option'):
             if option.text == instance_name:
@@ -226,6 +249,17 @@ class selTest(unittest.TestCase):
         
         self.searchAndWait_css('#discussions')
         
+
+    def ensure_proposal_exists(self,instance_name,proposal_name):
+        self.ensure_login(login_as_admin=True)
+        self.loadPage("/instance")
+        #l_instance = self.searchAndWait_xpath("li[contains(text(), 'instance_name')]")
+        #l_instance.click();
+        
+        # search and wait
+        if not self.is_text_present(proposal_name):
+            # instance doesn't exists. We need to create it
+            self._test_create_proposal(proposal_name)
 
     def ensure_instance_exists(self,instance_name):
         self.ensure_login(login_as_admin=True)
