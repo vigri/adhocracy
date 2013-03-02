@@ -117,15 +117,11 @@ class selTest(unittest.TestCase):
         WebDriverWait(self.driver, wait).until(func)
         return func(self.driver)
 
-    def searchAndWait_css(self, xpath, wait=10):
-        func = lambda driver: driver.find_element_by_css_selector(xpath)
+    def waitCSS(self, css, wait=10):
+        func = lambda driver: driver.find_element_by_css_selector(css)
         WebDriverWait(self.driver, wait).until(func)
         return func(self.driver)
 
-    def searchAndWait_by_tag_name(self, tagName, wait=10):
-        func = lambda driver: driver.find_element_by_tag_name(tagName)
-        WebDriverWait(self.driver, wait).until(func)
-        return func(self.driver)
 
     def is_text_present(self, text):
         try:
@@ -215,29 +211,30 @@ class selTest(unittest.TestCase):
     #@additionalInfoOnException
     
 
-    @additionalInfoOnException
+    
     def _login_user(self):
         self.loadPage()
         
-        l_login = self.searchAndWait_css('#nav_login > a')
+        l_login = self.waitCSS('#nav_login > a')
         l_login.click()
         
-        i_login = self.searchAndWait_css('input[name="login"]')
+        i_login = self.waitCSS('input[name="login"]')
         i_login.send_keys(self.adhocracy_login['username'])
 
-        i_password = self.searchAndWait_css('input[name="password"]')
+        i_password = self.waitCSS('input[name="password"]')
         i_password.send_keys(self.adhocracy_login['password'])
 
-        b_submit = self.searchAndWait_css('form#login input[type="submit"]') #self.driver.find_element_by_xpath('//form[@id="login"]//input[@type="submit"]')
+        b_submit = self.waitCSS('form#login input[type="submit"]') #self.driver.find_element_by_xpath('//form[@id="login"]//input[@type="submit"]')
         b_submit.click()
 
-        self.searchAndWait_css('#user_menu')
+        self.waitCSS('#user_menu')
 
         selTest.cookies = self.driver.get_cookies()
         for cookie in selTest.cookies:
             if cookie["name"] == "adhocracy_login":
                 selTest.login_cookie = cookie
 
+    @additionalInfoOnException
     def ensure_login(self, login_as_admin):
         # check if the user is currently logged in
         if selTest.login_cookie:
