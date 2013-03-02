@@ -216,7 +216,7 @@ class selTest(unittest.TestCase):
     
 
     @additionalInfoOnException
-    def login_user(self):
+    def _login_user(self):
         self.loadPage()
         
         l_login = self.searchAndWait_css('#nav_login > a')
@@ -251,13 +251,13 @@ class selTest(unittest.TestCase):
                     selTest.adhocracy_login = {'username':self.adhocracy_login_admin['username'],'password':self.adhocracy_login_admin['password'],'admin':True}
                 else:
                     selTest.adhocracy_login = {'username':self.adhocracy_login_user['username'],'password':self.adhocracy_login_user['password'],'admin':False}
-                self.login_user()
+                self._login_user()
         else:
             if login_as_admin:
                 selTest.adhocracy_login = {'username':self.adhocracy_login_admin['username'],'password':self.adhocracy_login_admin['password'],'admin':True}
             else:
                 selTest.adhocracy_login = {'username':self.adhocracy_login_user['username'],'password':self.adhocracy_login_user['password'],'admin':False}
-            self.login_user()
+            self._login_user()
 
     
 
