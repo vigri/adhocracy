@@ -16,7 +16,7 @@ import json
 import datetime
 import base64
 
-import test_basic
+#import test_basic
 
 from check_port_free import check_port_free
 from selenium import webdriver
@@ -178,82 +178,11 @@ class selTest(unittest.TestCase):
         """
 
 
-    @additionalInfoOnException
-    def test_create_proposal_comment(self):
-        instance_name = "my instance"
-        proposal_name = "new test proposal"
-        self.ensure_login(login_as_admin=True)
-        self.loadPage()
-        #self.ensure_instance_exists(instance_name);
-        #self.ensure_proposal_exists(proposal_name);
-
-        self.loadPage("/i/myinstance/proposal/23-new_test_proposal")
-
-
-        t_description = self.driver.find_element_by_xpath('//form[@name="new_comment"]//textarea[@name="text"]')
-        t_description.send_keys("Test comment")
-        
-        
-        
-        
-        b_submit = self.driver.find_element_by_xpath('//form[@name="new_comment"]//input[@type="submit"]')
-        b_submit.click()
-        
-        self.searchAndWait_css('a[id="start-discussion-button"]')
-
-
-
-
-    def _test_create_proposal(self,newProposalName='newTestProposal12345'):
-        # TODO: Fails if proposal exists
-        # <span class="error-message">An entry with this title already exists</span>
-
-        # first we need to ensure the user is logged in and the instance for our new proposal exists
-        instance_name = "my instance"
-        self.ensure_login(login_as_admin=True)
-        self.loadPage()
-        self.ensure_instance_exists(instance_name);
-
-        #l_instances = self.driver.find_element_by_css_selector('#nav_instances > a')
-        #l_instances.click()
-        #self.searchAndWait_xpath('//div[@class="top_actions title"]//a[@class="button title add"]')
-
-        #l_instance = self.searchAndWait_xpath("li[contains(text(), 'my instance')]")
-        #l_instance.click();
-
-        # temp!!!
-        self.loadPage("/i/myinstance/instance/myinstance")
-
-
-        l_proposals = self.searchAndWait_css('#subnav-proposals > a')
-        l_proposals.click()
-        
-        l_new_proposal = self.searchAndWait_css('#new-proposal > a')
-        l_new_proposal.click()
-        
-        i_label = self.driver.find_element_by_xpath('//form[@name="create_proposal"]//input[@name="label"]')
-        i_label.send_keys(newProposalName)
-        
-        for option in self.driver.find_elements_by_tag_name('option'):
-            if option.text == instance_name:
-                option.click()
-        
-        i_tags = self.driver.find_element_by_xpath('//form[@name="create_proposal"]//input[@name="tags"]')
-        i_tags.send_keys("test-tag")
-        
-        t_description = self.driver.find_element_by_xpath('//form[@name="create_proposal"]//textarea[@name="text"]')
-        t_description.send_keys("proposal description")
-        
-        b_submit = self.driver.find_element_by_xpath('//form[@name="create_proposal"]//button[@type="submit"]')
-        b_submit.click()
-        
-        self.searchAndWait_css('#discussions')
-        
-
+    
     def ensure_proposal_exists(self,instance_name,proposal_name):
         self.ensure_login(login_as_admin=True)
         self.loadPage("/instance")
-        #l_instance = self.searchAndWait_xpath("li[contains(text(), 'instance_name')]")
+        l_instance = self.searchAndWait_xpath("//li[contains(text(), 'instance_name')]")
         #l_instance.click();
         
         # search and wait
@@ -269,35 +198,6 @@ class selTest(unittest.TestCase):
             self._test_create_instance(instance_name)
 
     #@additionalInfoOnException
-    def _test_create_instance(self,newInstanceName='newInstance12345'):
-        instanceDescription = "Selenium Test Instance"
-        self.ensure_login(login_as_admin=True)
-        self.loadPage()
-        self.searchAndWait_css('#nav_instances > a')
-    
-        l_instances = self.driver.find_element_by_css_selector('#nav_instances > a')
-        l_instances.click()
-        self.searchAndWait_xpath('//div[@class="top_actions title"]//a[@class="button title add"]')
-    
-        l_instance_new = self.driver.find_element_by_xpath('//div[@class="top_actions title"]//a[@class="button title add"]')
-        l_instance_new.click()
-        self.searchAndWait_xpath('//form[@name="create_instance"]//input[@name="label"]')
-    
-        i_label = self.driver.find_element_by_xpath('//form[@name="create_instance"]//input[@name="label"]')
-        i_label.send_keys(newInstanceName)
-    
-        i_key = self.driver.find_element_by_xpath('//form[@name="create_instance"]//input[@name="key"]')
-        i_key.send_keys(newInstanceName.replace(" ", ""))
-    
-        t_description = self.driver.find_element_by_xpath('//form[@name="create_instance"]//textarea[@name="description"]')
-        t_description.send_keys(instanceDescription)
-    
-        b_submit = self.driver.find_element_by_xpath('//form[@name="create_instance"]//button[@type="submit"]')
-        b_submit.click()
-        
-        # todo wait x seconds until check is performed
-        if not self.is_text_present(instanceDescription):
-            raise Exception("Creation of instance failed!")
     
 
     @additionalInfoOnException
