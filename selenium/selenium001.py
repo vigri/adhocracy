@@ -38,6 +38,7 @@ def _displayInformation(e):
     #except Exception:
     #    print 'Screenshot: not supported'
 
+### Decorators
 def additionalInfoOnException(func):
     def test_wrapper(self):
         try:
@@ -46,6 +47,20 @@ def additionalInfoOnException(func):
             _displayInformation(e)
             raise
     return test_wrapper
+
+def jsRequired(func):
+    # todo: some page must have been loaded before - better solution?!
+    #self.loadPage();
+    def wrapper(self):
+        try:
+            #(JavascriptExecutor(self.driver)).executeScript("return true;");
+            self.driver.execute_script("return true")
+        except Exception:
+            raise Exception(func.__name__ + " skipped - No Javascript support detected")
+            return
+
+        return func
+    return wrapper
 
 def gist_upload(desc, content,date,ext):
     d = json.dumps({
@@ -163,7 +178,7 @@ class selTest(unittest.TestCase):
             command_executor = 'http://127.0.0.1:4444/wd/hub',
             desired_capabilities={'browserName': 'htmlunit',
                                             'version':'2',
-                                            'javascriptEnabled': True
+                                            'javascriptEnabled': False
                             })
     def tearDown(self): #tearDownClass
         """self.driver.close()

@@ -3,17 +3,17 @@
 
 import selenium001
 import unittest
+#import org.openqa.selenium.JavascriptExecutor
 
-from selenium001 import selTest, additionalInfoOnException
+from selenium001 import selTest, additionalInfoOnException, jsRequired
 
 class Test_basic(selTest):
     @additionalInfoOnException
-    def xtest_title_adhocracy(self):
+    def test_title_adhocracy(self):
         self.loadPage()
         self.searchAndWait_by_tag_name('title')
         title_tag = self.driver.find_element_by_tag_name('title')
         self.assertTrue("Adhocracy" in title_tag.text)
-
 
     @additionalInfoOnException
     def xtest_register(self):
