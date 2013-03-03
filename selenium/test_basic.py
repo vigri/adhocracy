@@ -3,7 +3,7 @@
 
 import selenium001
 import unittest
-#import org.openqa.selenium.JavascriptExecutor
+
 
 from selenium001 import selTest, additionalInfoOnException, jsRequired
 
@@ -38,8 +38,9 @@ class Test_basic(selTest):
 
         self.waitCSS('#user_menu')
 
+    @additionalInfoOnException
     def test_create_instance(self):
-        newInstanceName = "New test instance"
+        newInstanceName = "xx 123567"
         newInstanceDescription = "Selenium Test Instance"
 
         self.ensure_login(login_as_admin=True)
@@ -63,10 +64,7 @@ class Test_basic(selTest):
         b_submit = self.waitCSS('form[name="create_instance"] button[type="submit"]')
         b_submit.click()
 
-        # todo wait x seconds until check is performed
-        if not self.is_text_present(newInstanceDescription):
-            raise Exception("Creation of instance failed!")
+        self.waitXpath("//h2[contains(text(), '"+newInstanceName+"')]")
 
-        self.waitCSS('#user_menu')
 if __name__ == '__main__':
     unittest.main()
