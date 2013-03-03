@@ -69,11 +69,40 @@ class Test_basic(selTest):
         self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
 
     @additionalInfoOnException
-    def xtest_test_instance_exists(self):
+    def test_test_instance_exists(self):
         instance_name = "Selenium Test Instance"
+        
         self.ensure_login(login_as_admin=True)
         self.loadPage("/instance?instances_page=1&instances_size=999&instances_sort=order.title")
         self.waitXpath("//h3/a[contains(text(), '"+instance_name+"')]")
+
+    @additionalInfoOnException
+    def test_create_proposal(self):
+        proposalName = "Selenium Test Proposal1"
+        proposalDescription = "Selenium Test Proposal"
+        proposalTags = "Test Tag"
+        instanceName = "Selenium Test Instance"
+ 
+        self.ensure_login(login_as_admin=True)
+        self.loadPage("/i/seltest/proposal/new")
+
+        i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
+        i_label.send_keys(proposalName)
+        
+        for option in self.driver.find_elements_by_tag_name('option'):
+            if option.text == instanceName:
+                option.click()
+
+        i_tags = self.waitCSS('form[name="create_proposal"] input[name="tags"]')
+        i_tags.send_keys(proposalTags)
+        
+        t_description = self.waitCSS('form[name="create_proposal"] textarea[name="text"]')
+        t_description.send_keys(proposalDescription)
+        
+        b_submit = self.waitCSS('form[name="create_proposal"] button[type="submit"]')
+        b_submit.click()
+
+        self.waitCSS('#discussions')
 
 if __name__ == '__main__':
     unittest.main()
