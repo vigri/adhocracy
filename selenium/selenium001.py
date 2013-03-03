@@ -40,13 +40,13 @@ def _displayInformation(e):
 
 ### Decorators
 def additionalInfoOnException(func):
-    def test_wrapper(self):
+    def wrapper(self):
         try:
             func(self)
         except BaseException as e:
             _displayInformation(e)
             raise
-    return test_wrapper
+    return wrapper
 
 def jsRequired(func):
     # todo: some page must have been loaded before - better solution?!
@@ -112,16 +112,15 @@ class selTest(unittest.TestCase):
     # Login / password for non-admin-user
     adhocracy_login_user = {'username':'test2','password':'test'}
     
-    def searchAndWait_xpath(self, xpath, wait=10):
+    def waitCSS(self, css, wait=10):
+        func = lambda driver: driver.find_element_by_css_selector(css)
+        WebDriverWait(self.driver, wait).until(func,"blubb")
+        return func(self.driver)
+
+    def waitXpath(self,xpath, wait=10):
         func = lambda driver: driver.find_element_by_xpath(xpath)
         WebDriverWait(self.driver, wait).until(func)
         return func(self.driver)
-
-    def waitCSS(self, css, wait=10):
-        func = lambda driver: driver.find_element_by_css_selector(css)
-        WebDriverWait(self.driver, wait).until(func)
-        return func(self.driver)
-
 
     def is_text_present(self, text):
         try:
@@ -193,7 +192,7 @@ class selTest(unittest.TestCase):
     def ensure_proposal_exists(self,instance_name,proposal_name):
         self.ensure_login(login_as_admin=True)
         self.loadPage("/instance")
-        l_instance = self.searchAndWait_xpath("//li[contains(text(), 'instance_name')]")
+        l_instance = self.waitXpath("//li[contains(text(), 'instance_name')]")
         #l_instance.click();
         
         # search and wait
@@ -201,15 +200,6 @@ class selTest(unittest.TestCase):
             # instance doesn't exists. We need to create it
             self._test_create_proposal(proposal_name)
 
-    def ensure_instance_exists(self,instance_name):
-        self.ensure_login(login_as_admin=True)
-        self.loadPage("/instance")
-        if not self.is_text_present(instance_name):
-            # instance doesn't exists. We need to create it
-            self._test_create_instance(instance_name)
-
-    #@additionalInfoOnException
-    
 
     
     def _login_user(self):
@@ -234,7 +224,7 @@ class selTest(unittest.TestCase):
             if cookie["name"] == "adhocracy_login":
                 selTest.login_cookie = cookie
 
-    @additionalInfoOnException
+    #@additionalInfoOnException
     def ensure_login(self, login_as_admin):
         # check if the user is currently logged in
         if selTest.login_cookie:

@@ -39,9 +39,10 @@ class Test_basic(selTest):
         self.waitCSS('#user_menu')
 
     @additionalInfoOnException
-    def test_create_instance(self):
-        newInstanceName = "xx 123567"
-        newInstanceDescription = "Selenium Test Instance"
+    def test_create_test_instance(self):
+        instanceName = "Selenium Test Instance"
+        instanceDescription = "Selenium Test Instance"
+        instanceKey = "selTest"
 
         self.ensure_login(login_as_admin=True)
         self.loadPage()
@@ -53,18 +54,26 @@ class Test_basic(selTest):
         l_instance_new.click()
 
         i_label = self.waitCSS('form[name="create_instance"] input[name="label"]')
-        i_label.send_keys(newInstanceName)
+        i_label.send_keys(instanceName)
 
         i_key = self.waitCSS('form[name="create_instance"] input[name="key"]')
-        i_key.send_keys(newInstanceName.replace(" ", ""))   # since the key cannot have whitespaces we need to repleace them in newInstanceName
+        #i_key.send_keys(instanceName.replace(" ", ""))   # since the key cannot have whitespaces we need to repleace them in instanceName
+        i_key.send_keys(instanceKey)
 
         t_description = self.waitCSS('form[name="create_instance"] textarea[name="description"]')
-        t_description.send_keys(newInstanceDescription)
+        t_description.send_keys(instanceDescription)
     
         b_submit = self.waitCSS('form[name="create_instance"] button[type="submit"]')
         b_submit.click()
 
-        self.waitXpath("//h2[contains(text(), '"+newInstanceName+"')]")
+        self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
+
+    @additionalInfoOnException
+    def xtest_test_instance_exists(self):
+        instance_name = "Selenium Test Instance"
+        self.ensure_login(login_as_admin=True)
+        self.loadPage("/instance?instances_page=1&instances_size=999&instances_sort=order.title")
+        self.waitXpath("//h3/a[contains(text(), '"+instance_name+"')]")
 
 if __name__ == '__main__':
     unittest.main()
