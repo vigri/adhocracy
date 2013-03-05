@@ -8,24 +8,25 @@ import unittest
 from selenium001 import selTest, additionalInfoOnException, jsRequired
 
 class Test_basic(selTest):
+    @jsRequired
     @additionalInfoOnException
     def test_title_adhocracy(self):
         self.loadPage()
         title_tag = self.waitCSS('title')
-        self.assertTrue("Adhocracy" in title_tag.text)
+        self.assertTrue("AdhocrCacy" in title_tag.text)
 
     @additionalInfoOnException
-    def test_register(self):
+    def xtest_register(self):
         self.loadPage()
         
         b_register = self.waitCSS('div.register a.button.link_register_now')
         b_register.click()
         
         i_username = self.waitCSS('form[name="create_user"] input[name="user_name"]')
-        i_username.send_keys("selenium_user_test1111121")
+        i_username.send_keys("selenium_0753")
         
         i_email = self.waitCSS('form[name="create_user"] input[name="email"]')
-        i_email.send_keys("selenium_user_test@example11121.com")
+        i_email.send_keys("selenium_user_test@0753.com")
         
         i_password = self.waitCSS('form[name="create_user"] input[name="password"]')
         i_password.send_keys("test")
@@ -39,7 +40,7 @@ class Test_basic(selTest):
         self.waitCSS('#user_menu')
 
     @additionalInfoOnException
-    def test_create_test_instance(self):
+    def xtest_create_test_instance(self):
         instanceName = "Selenium Test Instance"
         instanceDescription = "Selenium Test Instance"
         instanceKey = "selTest"
@@ -69,7 +70,7 @@ class Test_basic(selTest):
         self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
 
     @additionalInfoOnException
-    def test_test_instance_exists(self):
+    def xtest_test_instance_exists(self):
         instance_name = "Selenium Test Instance"
         
         self.ensure_login(login_as_admin=True)
@@ -77,7 +78,7 @@ class Test_basic(selTest):
         self.waitXpath("//h3/a[contains(text(), '"+instance_name+"')]")
 
     @additionalInfoOnException
-    def test_create_proposal(self):
+    def xtest_create_proposal(self):
         proposalName = "Selenium Test Proposal1"
         proposalDescription = "Selenium Test Proposal"
         proposalTags = "Test Tag"
@@ -89,7 +90,7 @@ class Test_basic(selTest):
         i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
         i_label.send_keys(proposalName)
         
-        for option in self.driver.find_elements_by_tag_name('option'):
+        for option in self.waitCSS('option'):
             if option.text == instanceName:
                 option.click()
 

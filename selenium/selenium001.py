@@ -22,7 +22,15 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
 
-
+try:
+    from unittest import skip
+except ImportError:
+    def skip(f):
+        def func(self):
+            print "Skipping " + f.__name__
+        func.__name__ = f.__name__
+        return func
+   
 def _displayInformation(e):
     dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -52,6 +60,16 @@ def additionalInfoOnException(func):
             raise
     return wrapper
 
+def jsRequired(func):
+
+    def wrapper(self):
+        if(selTest.driver.desired_capabilities['javascriptEnabled'] == False):      # == false is just a Test!!!!
+            func(self)
+        else:
+            print "skipping"
+            skip(func)
+    
+    return wrapper
 
 def gist_upload(desc, content,log,date):
     d = json.dumps({
@@ -198,7 +216,7 @@ class selTest(unittest.TestCase):
         """
 
 
-    
+
     def ensure_proposal_exists(self,instance_name,proposal_name):
         self.ensure_login(login_as_admin=True)
         self.loadPage("/instance")
