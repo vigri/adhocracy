@@ -16,12 +16,12 @@ import json
 import datetime
 import base64
 
-#import test_basic
-
+from pyvirtualdisplay import Display
 from check_port_free import check_port_free
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
+
 
 def _displayInformation(e):
     dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -51,6 +51,8 @@ def additionalInfoOnException(func):
 def jsRequired(func):
     # todo: some page must have been loaded before - better solution?!
     #self.loadPage();
+    
+    
     def wrapper(self):
         try:
             #(JavascriptExecutor(self.driver)).executeScript("return true;");
@@ -82,7 +84,7 @@ def imgur_upload(picture):
     data = urllib.urlencode({ 'key' : selTest.apikey, 'image' : picture })
     req = urllib2.Request(selTest.url, data)
     req.add_header('Authorization', 'Client-ID ' + selTest.clientId)
-    
+    self
     json_response = urllib2.urlopen(req)
     json_response = json.load(json_response)
     
@@ -100,7 +102,7 @@ class selTest(unittest.TestCase):
     apikey = 'f48846809cc73b8bcabbd41335a08525085ed947'
     opener = urllib2.build_opener(urllib2.ProxyHandler({}))
 
-
+    
 
     # get adhocracy and paster_interactive dir
     adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
@@ -150,6 +152,9 @@ class selTest(unittest.TestCase):
         if not self.setup_done:
             selTest.setup_done = True
 
+            display = Display(visible=0, size=(1024, 768))
+            display.start()
+
             selTest.verificationErrors = []
 
             errors = check_port_free([4444,5001], opts_kill='pgid', opts_gracePeriod=10)
@@ -169,12 +174,26 @@ class selTest(unittest.TestCase):
             if errors:
                 raise Exception("\n".join(errors))
 
+
+
+            #selTest.driver = webdriver.Firefox()
+            #selTest.driver.get('http://www.google.com')
+            #print selTest.driver.title
+
             selTest.driver = webdriver.Remote(
             command_executor = 'http://127.0.0.1:4444/wd/hub',
             desired_capabilities={'browserName': 'htmlunit',
-                                            'version':'2',
-                                            'javascriptEnabled': False
+                                            'version':'2'
                             })
+            
+            print(repr(selTest.driver.desired_capabilities))
+            print "==="
+            print (repr(selTest.driver.desired_capabilities['javascriptEnabled']))
+            #if selTest.driver.desired_capabilities['javascriptEnabled']:
+            #    print "js active"
+            #else:
+            ##    print "js inactive"
+            
     def tearDown(self): #tearDownClass
         """self.driver.close()
         # Shutdown Selenium Server Standalone
