@@ -25,18 +25,22 @@ from selenium.webdriver.support.wait import WebDriverWait
 
 def _displayInformation(e):
     dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    url = gist_upload("Selenium driven test\n"+dt +"\n%r" % e+"]",selTest.driver.page_source,dt,"html")
+    
+    selTest.logfile.flush()
+    log  = open('logfile', 'r').read()
+    
+    url = gist_upload("Selenium driven test\n"+dt +"\n%r" % e+"]",selTest.driver.page_source,log,dt)
                       
     print 'Exception: %r' % e
     print 'Sourcecode of website: ' + url
     
-    """ Since htmlUnit has no screenshot-support the image upload only can be performed
-    if the browserName differs from 'htmlUnit'
+    """ Since some drivers have no screenshot-support (such htmlunit) the image upload only can be performed
+        if the screenshot function is supported
     """
-    #try:
-    #    print 'Screenshot: '+ imgur_upload(e.screen)
-    #except Exception:
-    #    print 'Screenshot: not supported'
+    try:
+        print 'Screenshot: '+ imgur_upload(e.screen)
+    except Exception:
+        print 'Screenshot: not supported'
 
 ### Decorators
 def additionalInfoOnException(func):
@@ -48,30 +52,14 @@ def additionalInfoOnException(func):
             raise
     return wrapper
 
-def jsRequired(func):
-    # todo: some page must have been loaded before - better solution?!
-    #self.loadPage();
-    
-    
-    def wrapper(self):
-        try:
-            #(JavascriptExecutor(self.driver)).executeScript("return true;");
-            self.driver.execute_script("return true")
-        except Exception:
-            raise Exception(func.__name__ + " skipped - No Javascript support detected")
-            return
 
-        return func
-    return wrapper
-
-def gist_upload(desc, content,date,ext):
+def gist_upload(desc, content,log,date):
     d = json.dumps({
         "description":desc,
         "public":False,
         "files":{
-                 date+"."+ext:{
-                        "content":content
-                        }
+                 date+" - Sourcecode.html":{ "content":content },
+                 date+" - Logfile.text":{ "content":log }
                 }
     })
     res = urllib2.urlopen('https://api.github.com/gists',d).read()
@@ -96,13 +84,13 @@ def imgur_upload(picture):
 class selTest(unittest.TestCase):
     setup_done = False
     login_cookie = ""
-
+    
     clientId = 'b96e44dc87cf435'
     url = 'https://api.imgur.com/3/image'
     apikey = 'f48846809cc73b8bcabbd41335a08525085ed947'
     opener = urllib2.build_opener(urllib2.ProxyHandler({}))
 
-    
+    logfile = open('logfile', 'w')
 
     # get adhocracy and paster_interactive dir
     adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
@@ -142,7 +130,9 @@ class selTest(unittest.TestCase):
 
     def start_adhocracy(self):
         null=open('/dev/null','wb')  
-        proc = subprocess.Popen(selTest.paster_dir+'paster_interactive.sh',stderr=null, stdout=null,preexec_fn=os.setsid)
+        
+        proc = subprocess.Popen(selTest.paster_dir+'paster_interactive.sh',stderr=self.logfile, stdout=self.logfile, shell=True, preexec_fn=os.setsid)
+        
         return proc
 
     def shutdown_adhocracy(self, pid):
@@ -169,7 +159,8 @@ class selTest(unittest.TestCase):
 
             # Start Adhocracy
             selTest.adhocracy = self.start_adhocracy()  
-
+            #out = selTest.adhocracy.communicate()
+            
             errors = check_port_free([4444, 5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
             if errors:
                 raise Exception("\n".join(errors))
@@ -186,9 +177,9 @@ class selTest(unittest.TestCase):
                                             'version':'2'
                             })
             
-            print(repr(selTest.driver.desired_capabilities))
-            print "==="
-            print (repr(selTest.driver.desired_capabilities['javascriptEnabled']))
+            #print(repr(selTest.driver.desired_capabilities))
+            #print "==="
+            #print (repr(selTest.driver.desired_capabilities['javascriptEnabled']))
             #if selTest.driver.desired_capabilities['javascriptEnabled']:
             #    print "js active"
             #else:
