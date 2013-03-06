@@ -8,7 +8,8 @@ import unittest
 from selenium001 import selTest, additionalInfoOnException, jsRequired
 
 class Test_basic(selTest):
-    @jsRequired
+    print "blubb"
+    #@jsRequired
     @additionalInfoOnException
     def test_title_adhocracy(self):
         self.loadPage()

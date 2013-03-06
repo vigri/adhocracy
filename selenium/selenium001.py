@@ -23,14 +23,18 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
 
 try:
-    from unittest import skip
+   from unittest import skip
 except ImportError:
-    def skip(f):
-        def func(self):
-            print "Skipping " + f.__name__
-        func.__name__ = f.__name__
-        return func
+    def skip(reason):
+        def skipf( f):
+            def func(self):
+                    print(reason)
+            func.__name__ = f.__name__
+            func.func_name = f.func_name
+            return func
+        return skipf
    
+      
 def _displayInformation(e):
     dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -61,13 +65,12 @@ def additionalInfoOnException(func):
     return wrapper
 
 def jsRequired(func):
-
     def wrapper(self):
         if(selTest.driver.desired_capabilities['javascriptEnabled'] == False):      # == false is just a Test!!!!
             func(self)
         else:
             print "skipping"
-            skip(func)
+            return skip('Require JS')(func)
     
     return wrapper
 
@@ -102,14 +105,13 @@ def imgur_upload(picture):
 class selTest(unittest.TestCase):
     setup_done = False
     login_cookie = ""
-    
     clientId = 'b96e44dc87cf435'
     url = 'https://api.imgur.com/3/image'
     apikey = 'f48846809cc73b8bcabbd41335a08525085ed947'
     opener = urllib2.build_opener(urllib2.ProxyHandler({}))
 
     logfile = open('logfile', 'w')
-
+    
     # get adhocracy and paster_interactive dir
     adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
     paster_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..','..'))+os.sep
