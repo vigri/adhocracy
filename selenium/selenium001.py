@@ -22,19 +22,6 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
 
-try:
-   from unittest import skip
-except ImportError:
-    def skip(reason):
-        def skipf(f):
-            def func(self):
-                    print(reason)
-            func.__name__ = f.__name__
-            func.func_name = f.func_name
-            return func
-        return skipf
-   
-      
 def _displayInformation(e):
     dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -68,12 +55,11 @@ def additionalInfoOnException(func):
 
 def jsRequired(func):
     def wrapper(self):
-        if(selTest.driver.desired_capabilities['javascriptEnabled'] == False):      # == false is just a Test!!!!
-            print "not skipping...."
+        if(selTest.driver.desired_capabilities['javascriptEnabled'] == True):
             func(self)
         else:
-            print "skipping"
-            return skip('Require JS')(func)
+            print "This function requires JavaScript"
+            return
     wrapper.__name__ = func.__name__
     return wrapper
  
