@@ -269,6 +269,9 @@ class selTest(unittest.TestCase):
         selTest.login_cookie = ""
         selTest.driver.delete_cookie("adhocracy_login")
 
+    def make_element_visible_by_id(self,elementId):
+        self.driver.execute_script("document.getElementById('"+elementId+"').style.display = 'block';")
+        
     def loadPage(self,path=""):
         self.driver.get('http://adhocracy.lan:5001'+path)
 
