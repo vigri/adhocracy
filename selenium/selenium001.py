@@ -26,7 +26,7 @@ try:
    from unittest import skip
 except ImportError:
     def skip(reason):
-        def skipf( f):
+        def skipf(f):
             def func(self):
                     print(reason)
             func.__name__ = f.__name__
@@ -57,22 +57,26 @@ def _displayInformation(e):
 ### Decorators
 def additionalInfoOnException(func):
     def wrapper(self):
+        
         try:
             func(self)
         except BaseException as e:
             _displayInformation(e)
             raise
+    wrapper.__name__ = func.__name__
     return wrapper
 
 def jsRequired(func):
     def wrapper(self):
         if(selTest.driver.desired_capabilities['javascriptEnabled'] == False):      # == false is just a Test!!!!
+            print "not skipping...."
             func(self)
         else:
             print "skipping"
             return skip('Require JS')(func)
-    
+    wrapper.__name__ = func.__name__
     return wrapper
+ 
 
 def gist_upload(desc, content,log,date):
     d = json.dumps({
