@@ -21,6 +21,7 @@ from check_port_free import check_port_free
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
+from ElementNotFound import ElementNotFound
 
 def _displayInformation(e):
     dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -47,7 +48,7 @@ def additionalInfoOnException(func):
         
         try:
             func(self)
-        except BaseException as e:
+        except Exception as e:
             _displayInformation(e)
             raise
     wrapper.__name__ = func.__name__
@@ -114,7 +115,7 @@ class selTest(unittest.TestCase):
     
     def waitCSS(self, css, wait=10):
         func = lambda driver: driver.find_element_by_css_selector(css)
-        WebDriverWait(self.driver, wait).until(func,"blubb")
+        WebDriverWait(self.driver, wait).until(func,css)
         return func(self.driver)
 
     def waitXpath(self,xpath, wait=10):
@@ -162,7 +163,12 @@ class selTest(unittest.TestCase):
                 raise Exception("\n".join(errors))
 
             # Database isolation - trivial - copy database to some other destination
-            shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
+            #shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
+
+            # Temp!
+            # Database isolation - trivial - restore our saved database
+            shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
+        
 
             # Start Selenium Server Standalone
             selTest.sel_server = self.start_selenium_server_standalone()
@@ -186,15 +192,7 @@ class selTest(unittest.TestCase):
             desired_capabilities={'browserName': 'htmlunit',
                                             'version':'2'
                             })
-            
-            #print(repr(selTest.driver.desired_capabilities))
-            #print "==="
-            #print (repr(selTest.driver.desired_capabilities['javascriptEnabled']))
-            #if selTest.driver.desired_capabilities['javascriptEnabled']:
-            #    print "js active"
-            #else:
-            ##    print "js inactive"
-            
+ 
     def tearDown(self): #tearDownClass
         """self.driver.close()
         # Shutdown Selenium Server Standalone
@@ -266,7 +264,10 @@ class selTest(unittest.TestCase):
                 selTest.adhocracy_login = {'username':self.adhocracy_login_user['username'],'password':self.adhocracy_login_user['password'],'admin':False}
             self._login_user()
 
-    
+    def force_logout(self):
+        # Delete the login-cookie (if existent) to ensure the user is not logged in
+        selTest.login_cookie = ""
+        selTest.driver.delete_cookie("adhocracy_login")
 
     def loadPage(self,path=""):
         self.driver.get('http://adhocracy.lan:5001'+path)
