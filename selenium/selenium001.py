@@ -15,8 +15,9 @@ import urllib2
 import json
 import datetime
 import base64
+import ConfigParser
 
-from pyvirtualdisplay import Display
+
 from check_port_free import check_port_free
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -103,6 +104,7 @@ class selTest(unittest.TestCase):
 
     logfile = open('logfile', 'w')
     
+    Config = ConfigParser.ConfigParser()
     # get adhocracy and paster_interactive dir
     adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
     paster_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..','..'))+os.sep
@@ -132,7 +134,12 @@ class selTest(unittest.TestCase):
 
     def start_selenium_server_standalone(self):
         null=open('/dev/null','wb')
-        cmd = ['java','-Djava.security.egd=file:/dev/./urandom','-jar',os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','res','selenium-2.26.0','selenium-server-standalone-2.26.0.jar')]
+
+        xvfb = subprocess.Popen(['Xvfb', ':42','-ac','-screen','0','1024x768x16',':1'])
+        os.environ["DISPLAY"]=":42"
+
+        cmd = ['java','-Djava.security.egd=file:/dev/./urandom','-jar','-Dwebdriver.chrome.driver=res/chromedriver_x64_26.0.1383.0',os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','res','selenium-2.26.0','selenium-server-standalone-2.26.0.jar')]
+
         proc = subprocess.Popen(cmd,stderr=null,stdout=null,preexec_fn=os.setsid)
         return proc
 
@@ -153,8 +160,11 @@ class selTest(unittest.TestCase):
         if not self.setup_done:
             selTest.setup_done = True
 
-            display = Display(visible=0, size=(1024, 768))
-            display.start()
+            if not os.path.isfile("selenium.ini"):
+                raise Exception("Configuration file not found!")
+
+            # Path to configuration file
+            selTest.Config.read("selenium.ini")
 
             selTest.verificationErrors = []
 
@@ -175,24 +185,31 @@ class selTest(unittest.TestCase):
 
             # Start Adhocracy
             selTest.adhocracy = self.start_adhocracy()  
-            #out = selTest.adhocracy.communicate()
-            
+
             errors = check_port_free([4444, 5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
             if errors:
                 raise Exception("\n".join(errors))
 
+            selectedBrowser = self.ConfigSectionMap("Environment")['browser']
 
-
-            #selTest.driver = webdriver.Firefox()
-            #selTest.driver.get('http://www.google.com')
-            #print selTest.driver.title
+            # Select the desired browser based on config file    TODO: default case
+            if selectedBrowser == "HTMLUNIT":
+                #print "using htmlunit"
+                desired_caps = webdriver.DesiredCapabilities.HTMLUNIT
+                desired_caps['version'] = "2"
+            elif selectedBrowser == "FIREFOX":
+                #print "using firefox"
+                desired_caps = webdriver.DesiredCapabilities.FIREFOX
+            elif selectedBrowser == "CHROME":
+                #print "using chrome"
+                os.environ['webdriver.chrome.driver'] = "res/chromedriver_x64_26.0.1383.0"
+                desired_caps = webdriver.DesiredCapabilities.CHROME
 
             selTest.driver = webdriver.Remote(
             command_executor = 'http://127.0.0.1:4444/wd/hub',
-            desired_capabilities={'browserName': 'htmlunit',
-                                            'version':'2'
-                            })
- 
+            desired_capabilities=desired_caps
+            )
+
     def tearDown(self): #tearDownClass
         """self.driver.close()
         # Shutdown Selenium Server Standalone
@@ -203,6 +220,10 @@ class selTest(unittest.TestCase):
         
         # Database isolation - trivial - restore our saved database
         shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
+        
+        TODO: Remove logfile
+        
+        
         """
 
 
@@ -271,7 +292,20 @@ class selTest(unittest.TestCase):
 
     def make_element_visible_by_id(self,elementId):
         self.driver.execute_script("document.getElementById('"+elementId+"').style.display = 'block';")
-        
+
+    def ConfigSectionMap(self,section):
+        dict1 = {}
+        options = self.Config.options(section)
+        for option in options:
+            try:
+                dict1[option] = self.Config.get(section, option)
+                if dict1[option] == -1:
+                    DebugPrint("skip: %s" % option)
+            except:
+                print("exception on %s!" % option)
+                dict1[option] = None
+        return dict1
+
     def loadPage(self,path=""):
         self.driver.get('http://adhocracy.lan:5001'+path)
 

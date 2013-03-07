@@ -120,24 +120,6 @@ class Test_basic(selTest):
 
         self.waitCSS('#user_menu')
 
-    """@additionalInfoOnException
-    def test_create_proposal_comment(self):
-        self.ensure_login(login_as_admin=True)
-        self.loadPage("/i/seltest/proposal/4-Selenium_Test_Proposal")       # TODO: Dynamic!
-
-        self.waitCSS('#discussions')
-
-        #self.driver.execute_script("document.getElementById('new_toplevel_comment').style.display = 'block';")
-        
-        t_description = self.waitCSS('form[name="new_comment"] textarea[name="text"]')
-        t_description.send_keys("Test comment")
-
-        b_submit = self.waitCSS('form[name="new_comment"] input[type="submit"]')
-        b_submit.click()
-
-        self.waitCSS('a[id="start-discussion-button"]')
-    """
-    
     @jsRequired
     @additionalInfoOnException
     def test_create_proposal_comment(self):
