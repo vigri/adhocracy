@@ -3,7 +3,7 @@
 
 import selenium001
 import unittest
-
+import time
 
 from selenium001 import selTest, additionalInfoOnException, jsRequired
 
@@ -12,7 +12,7 @@ class Test_basic(selTest):
     def test_title_adhocracy(self):
         self.loadPage()
         title_tag = self.waitCSS('title')
-        self.assertTrue("xAdhocracy" in title_tag.text)
+        self.assertTrue("Adhocracy" in title_tag.text)
 
     @additionalInfoOnException
     def test_create_instance_path(self):
@@ -123,7 +123,7 @@ class Test_basic(selTest):
     @additionalInfoOnException
     def test_create_proposal_comment(self):
         self.ensure_login(login_as_admin=True)
-        self.loadPage("/i/seltest/proposal/4-Selenium_Test_Proposal")       # TODO: Dynamic!
+        self.loadPage("/i/seltest/proposal/6-Selenium_Test_Proposal")       # TODO: Dynamic!
 
         self.waitCSS('#discussions')
 
@@ -137,5 +137,35 @@ class Test_basic(selTest):
             b_submit.click()
 
             self.waitCSS('a[id="start-discussion-button"]')
+
+    @jsRequired
+    @additionalInfoOnException
+    def test_create_feedback(self):
+        self.ensure_login(login_as_admin=True)
+        self.loadPage()
+
+        feedback_button = self.waitCSS('a#feedback_button')
+        feedback_button.click()
+
+        # after the click we wait 2 seconds to see if the feedback-form is visible to the user
+        time.sleep(2)
+        form_position = self.driver.execute_script("return document.getElementById('feedback').style.right")
+
+        if (form_position != "0px"):
+            raise Exception("Element not visible")
+
+        feedbackTitle = "Selenium Feedback"
+        feedbackDescription = "Selenium Test-Feedback"
+
+        i_title = self.waitCSS('form[name="create_feedback"] input[name="label"]')
+        i_title.send_keys(feedbackTitle)
+
+        t_description = self.waitCSS('form[name="create_feedback"] textarea[name="text"]')
+        t_description.send_keys(feedbackDescription)
+        
+        b_submit = self.waitCSS('form[name="create_feedback"] button[type="submit"]')
+        b_submit.click()
+
+        self.waitCSS('#discussions')
 if __name__ == '__main__':
     unittest.main()

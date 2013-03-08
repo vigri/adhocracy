@@ -18,6 +18,7 @@ import base64
 import ConfigParser
 import multiprocessing
 
+
 from check_port_free import check_port_free
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -156,7 +157,7 @@ class selTest(unittest.TestCase):
 
     def setUp(self):
         if not self.setup_done:
-            selTest.setup_done = Tru
+            selTest.setup_done = True
             if not os.path.isfile("selenium.ini"):
                 raise Exception("Configuration file not found!")
 
