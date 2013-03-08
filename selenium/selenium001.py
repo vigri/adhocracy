@@ -16,7 +16,7 @@ import json
 import datetime
 import base64
 import ConfigParser
-
+import multiprocessing
 
 from check_port_free import check_port_free
 from selenium import webdriver
@@ -31,7 +31,7 @@ def _displayInformation(e):
     log  = open('logfile', 'r').read()
     
     url = gist_upload("Selenium driven test\n"+dt +"\n%r" % e+"]",selTest.driver.page_source,log,dt)
-                      
+
     print 'Exception: %r' % e
     print 'Sourcecode of website: ' + url
     
@@ -39,7 +39,7 @@ def _displayInformation(e):
         if the screenshot function is supported
     """
     try:
-        print 'Screenshot: '+ imgur_upload(e.screen)
+        print 'Screenshot: '+ imgur_upload(selTest.driver.get_screenshot_as_base64())
     except Exception:
         print 'Screenshot: not supported'
 
@@ -64,7 +64,6 @@ def jsRequired(func):
             return
     wrapper.__name__ = func.__name__
     return wrapper
- 
 
 def gist_upload(desc, content,log,date):
     d = json.dumps({
@@ -85,7 +84,6 @@ def imgur_upload(picture):
     data = urllib.urlencode({ 'key' : selTest.apikey, 'image' : picture })
     req = urllib2.Request(selTest.url, data)
     req.add_header('Authorization', 'Client-ID ' + selTest.clientId)
-    self
     json_response = urllib2.urlopen(req)
     json_response = json.load(json_response)
     
@@ -158,8 +156,7 @@ class selTest(unittest.TestCase):
 
     def setUp(self):
         if not self.setup_done:
-            selTest.setup_done = True
-
+            selTest.setup_done = Tru
             if not os.path.isfile("selenium.ini"):
                 raise Exception("Configuration file not found!")
 
@@ -185,7 +182,7 @@ class selTest(unittest.TestCase):
 
             # Start Adhocracy
             selTest.adhocracy = self.start_adhocracy()  
-
+            
             errors = check_port_free([4444, 5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
             if errors:
                 raise Exception("\n".join(errors))
@@ -269,9 +266,8 @@ class selTest(unittest.TestCase):
         if selTest.login_cookie:
             # only do something if the current login-type differs from the desired login-type
             if self.adhocracy_login['admin'] != login_as_admin:
-                # delete the stored var and relevant cookie (force "logout")
-                selTest.login_cookie = ""
-                selTest.driver.delete_cookie("adhocracy_login")
+                # delete the stored cookie-var and relevant cookie
+                self.force_logout()
 
                 if login_as_admin:
                     selTest.adhocracy_login = {'username':self.adhocracy_login_admin['username'],'password':self.adhocracy_login_admin['password'],'admin':True}

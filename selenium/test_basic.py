@@ -8,12 +8,11 @@ import unittest
 from selenium001 import selTest, additionalInfoOnException, jsRequired
 
 class Test_basic(selTest):
-
     @additionalInfoOnException
     def test_title_adhocracy(self):
         self.loadPage()
         title_tag = self.waitCSS('title')
-        self.assertTrue("Adhocracy" in title_tag.text)
+        self.assertTrue("xAdhocracy" in title_tag.text)
 
     @additionalInfoOnException
     def test_create_instance_path(self):
