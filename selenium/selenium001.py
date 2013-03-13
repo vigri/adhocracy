@@ -16,8 +16,8 @@ import datetime
 import base64
 import ConfigParser
 import multiprocessing
+import time
 
-from pyvirtualdisplay import Display
 from check_port_free import check_port_free
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
@@ -152,10 +152,7 @@ class selTest(unittest.TestCase):
         os.killpg(pid, signal.SIGTERM)
 
     def start_adhocracy(self):
-        null=open('/dev/null','wb')  
-        
         proc = subprocess.Popen(selTest.paster_dir+'paster_interactive.sh',stderr=self.logfile, stdout=self.logfile, shell=True, preexec_fn=os.setsid)
-        
         return proc
 
     def shutdown_adhocracy(self, pid):
@@ -169,21 +166,26 @@ class selTest(unittest.TestCase):
 
             # Path to configuration file
             selTest.Config.read("selenium.ini")
-
             selTest.verificationErrors = []
 
-            selTest.testInstanceName = ""
-            selTest.testInstanceKey = ""
-            
-            
-            # Check for first free virtual display number
+            selTest.defaultUser = ""
+            selTest.defaultUserPassword = ""
+            selTest.defaultProposalUrl = ""
+
+            # Used for xvfb output. For debugging purposes this can be set to file
+            null=open('/dev/null','wb')
+
+            # Get virtual display
+            # get first free virtual display number
             display_number = 0
             while True:
                 display_number += 1
                 if not os.path.isfile("/tmp/.X"+str(display_number)+"-lock"):
                     break
 
-            subprocess.Popen(['Xvfb', ':'+str(display_number),'-ac','-screen','0','1024x768x16'])
+            cmd = 'Xvfb', ':'+str(display_number)+ '-ac -screen 0 1024x768x16'
+            subprocess.Popen(cmd,stderr=null, stdout=null, shell=True)
+        
             os.environ["DISPLAY"]=":"+str(display_number)
 
             # Database isolation - trivial - copy database to some other destination
@@ -211,7 +213,7 @@ class selTest(unittest.TestCase):
             try:  
                 selTest.selectedBrowser = os.environ["selenium.browser"]
             except KeyError: 
-                selTest.selectedBrowser = "CHROME"  # HTMLUNIT
+                selTest.selectedBrowser = "HTMLUNIT"  # HTMLUNIT
 
             try:  
                 selTest.disableJs = os.environ["selenium.disableJs"]
@@ -254,7 +256,9 @@ class selTest(unittest.TestCase):
             elif self.selectedBrowser == "CHROME":
                 selTest.driver = webdriver.Chrome('res/chromedriver_x64_26.0.1383.0',)
                 
+                
                 # No javascript-disable support for chrome!
+            self._create_default_user()
 
     def tearDown(self): #tearDownClass
         #print "Teardown"
@@ -272,9 +276,7 @@ class selTest(unittest.TestCase):
         
         
         """
-
-
-
+    
     def ensure_proposal_exists(self,instance_name,proposal_name):
         self.ensure_login(login_as_admin=True)
         self.loadPage("/instance")
@@ -286,6 +288,35 @@ class selTest(unittest.TestCase):
             # instance doesn't exists. We need to create it
             self._test_create_proposal(proposal_name)
 
+    @additionalInfoOnException
+    def _create_default_user(self):
+        # This function creates a default user which can be used for other interactions within tests
+        creationTime = int(time.time())
+        userName = str(creationTime)+self.selectedBrowser
+        self.loadPage()
+
+        b_register = self.waitCSS('div.register a.button.link_register_now')
+        b_register.click()
+
+        i_username = self.waitCSS('form[name="create_user"] input[name="user_name"]')
+        i_username.send_keys(userName)
+
+        i_email = self.waitCSS('form[name="create_user"] input[name="email"]')
+        i_email.send_keys(userName+"@example.com")
+
+        i_password = self.waitCSS('form[name="create_user"] input[name="password"]')
+        i_password.send_keys("test")
+
+        i_password2 = self.waitCSS('form[name="create_user"] input[name="password_confirm"]')
+        i_password2.send_keys("test")
+
+        b_submit = self.waitCSS('form[name="create_user"] input[type="submit"]')
+        b_submit.click()
+
+        self.waitCSS('#user_menu')
+        self.force_logout()
+        selTest.defaultUser = userName
+        selTest.defaultUserPassword = "test"
 
     
     def _login_user(self):

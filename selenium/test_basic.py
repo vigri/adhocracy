@@ -8,11 +8,31 @@ import time
 from selenium001 import selTest, additionalInfoOnException, jsRequired
 
 class Test_basic(selTest):
+
     @additionalInfoOnException
     def test_title_adhocracy(self):
         self.loadPage()
         title_tag = self.waitCSS('title')
         self.assertTrue("Adhocracy" in title_tag.text)
+
+    @additionalInfoOnException
+    def test_title_instances(self):
+        self.loadPage("/instance")
+        title_tag = self.waitCSS('title')
+        self.assertTrue("Adhocracy" in title_tag.text)
+
+    @additionalInfoOnException
+    def test_title_help(self):
+        self.loadPage("/_pages/help")
+        title_tag = self.waitCSS('title')
+        self.assertTrue("Hilfe" in title_tag.text)
+
+    @additionalInfoOnException
+    def test_title_imprint(self):
+        self.loadPage("/_pages/imprint")
+        title_tag = self.waitCSS('title')
+        self.assertTrue("Imprint" in title_tag.text)
+
 
     @additionalInfoOnException
     def test_create_instance_path(self):
@@ -53,7 +73,7 @@ class Test_basic(selTest):
 
     @additionalInfoOnException
     def test_create_proposal_path(self):
-        instanceName = self.testInstanceName
+        instanceName = "Feedback"
 
         self.ensure_login(login_as_admin=True)
         self.loadPage()
@@ -96,6 +116,11 @@ class Test_basic(selTest):
 
         self.waitCSS('#discussions')
 
+        currentUrl = self.driver.current_url
+        currentUrl_relPath = currentUrl.index('/i/')
+        selTest.defaultProposalUrl = currentUrl[currentUrl_relPath:]
+        
+
     @additionalInfoOnException
     def test_register(self):
         self.force_logout()
@@ -126,7 +151,7 @@ class Test_basic(selTest):
     @additionalInfoOnException
     def test_create_proposal_comment(self):
         self.ensure_login(login_as_admin=True)
-        self.loadPage("/i/seltest/proposal/6-Selenium_Test_Proposal")       # TODO: Dynamic!
+        self.loadPage(self.defaultProposalUrl)       # TODO: Dynamic!
 
         self.waitCSS('#discussions')
 
