@@ -24,12 +24,13 @@ class Test_basic(selTest):
 
         l_instance_new = self.waitCSS('div.top_actions.title a.button.title.add')
         l_instance_new.click()
-        
+
     @additionalInfoOnException
     def test_create_instance(self):
-        instanceName = "Selenium Test Instance"
+        creationTime = int(time.time())
+        instanceName = "Test "+str(creationTime)+"_"+self.selectedBrowser
         instanceDescription = "Selenium Test Instance"
-        instanceKey = "selTest"
+        instanceKey = "t"+str(creationTime)
 
         self.ensure_login(login_as_admin=True)
         self.loadPage("/instance/new")
@@ -48,10 +49,11 @@ class Test_basic(selTest):
         b_submit.click()
 
         self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
+        selTest.testInstanceName = instanceName
 
     @additionalInfoOnException
     def test_create_proposal_path(self):
-        instanceName = "Selenium Test Instance"
+        instanceName = self.testInstanceName
 
         self.ensure_login(login_as_admin=True)
         self.loadPage()
@@ -72,12 +74,13 @@ class Test_basic(selTest):
 
     @additionalInfoOnException
     def test_create_proposal(self):
-        proposalName = "Selenium Test Proposal"
+        creationTime = int(time.time())
+        proposalName = "Test "+str(creationTime)+"_"+self.selectedBrowser
         proposalDescription = "Selenium Test Proposal"
         proposalTags = "Test Tag"
 
         self.ensure_login(login_as_admin=True)
-        self.loadPage("/i/seltest/proposal/new")
+        self.loadPage("/i/feedback/proposal/new")
 
         i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
         i_label.send_keys(proposalName)
