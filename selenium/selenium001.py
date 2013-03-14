@@ -161,8 +161,8 @@ class selTest(unittest.TestCase):
     def setUp(self):
         if not self.setup_done:
             selTest.setup_done = True
-            if not os.path.isfile("selenium.ini"):
-                raise Exception("Configuration file not found!")
+            #if not os.path.isfile("selenium.ini"):
+            #    raise Exception("Configuration file not found!")
 
             # Path to configuration file
             selTest.Config.read("selenium.ini")
@@ -182,9 +182,10 @@ class selTest(unittest.TestCase):
                 display_number += 1
                 if not os.path.isfile("/tmp/.X"+str(display_number)+"-lock"):
                     break
-
-            cmd = 'Xvfb', ':'+str(display_number)+ '-ac -screen 0 1024x768x16'
-            subprocess.Popen(cmd,stderr=null, stdout=null, shell=True)
+            
+            subprocess.Popen(['Xvfb',':'+str(display_number),'-ac','-screen','0','1024x768x16'],stderr=null, stdout=null)
+            #cmd = 'Xvfb', ':'+str(display_number)+ '-ac -screen 0 1024x768x16'
+            #subprocess.Popen(cmd,stderr=null, stdout=null)
         
             os.environ["DISPLAY"]=":"+str(display_number)
 
@@ -211,15 +212,21 @@ class selTest(unittest.TestCase):
 
             # Check which browser has been selected. If none, use htmlunit
             try:  
-                selTest.selectedBrowser = os.environ["selenium.browser"]
-            except KeyError: 
+                selTest.selectedBrowser = os.environ["selBrowser"]
+            except KeyError:
                 selTest.selectedBrowser = "HTMLUNIT"  # HTMLUNIT
 
             try:  
-                selTest.disableJs = os.environ["selenium.disableJs"]
+                selTest.adhocracyUrl = os.environ["selAdhocracyUrl"]
+            except KeyError: 
+                selTest.adhocracyUrl = "http://adhocracy.lan:5001"
+
+            try:  
+                selTest.disableJs = os.environ["selDisableJS"]
+                if(selTest.disableJs != "1"):
+                    selTest.disableJs = "0"
             except KeyError: 
                 selTest.disableJs = "0"
-
 
             # Setup driver based on selected browser
             if self.selectedBrowser == "HTMLUNIT":
@@ -252,12 +259,13 @@ class selTest(unittest.TestCase):
                 if(selTest.disableJs == "1"):
                     fp.SetPreference("javascript.enabled", False);
                 
-                selTest.driver = webdriver.Firefox(firefox_profile=fp,)
+                selTest.driver = webdriver.Firefox(firefox_profile=fp)
             elif self.selectedBrowser == "CHROME":
-                selTest.driver = webdriver.Chrome('res/chromedriver_x64_26.0.1383.0',)
-                
-                
+                selTest.driver = webdriver.Chrome('res/chromedriver_x64_26.0.1383.0')
                 # No javascript-disable support for chrome!
+            else:
+                print "NO VALID BROWSER!!!!!!!!!"
+
             self._create_default_user()
 
     def tearDown(self): #tearDownClass
@@ -331,7 +339,7 @@ class selTest(unittest.TestCase):
         i_password = self.waitCSS('input[name="password"]')
         i_password.send_keys(self.adhocracy_login['password'])
 
-        b_submit = self.waitCSS('form#login input[type="submit"]') #self.driver.find_element_by_xpath('//form[@id="login"]//input[@type="submit"]')
+        b_submit = self.waitCSS('form#login input[type="submit"]')
         b_submit.click()
 
         self.waitCSS('#user_menu')
@@ -341,7 +349,6 @@ class selTest(unittest.TestCase):
             if cookie["name"] == "adhocracy_login":
                 selTest.login_cookie = cookie
 
-    #@additionalInfoOnException
     def ensure_login(self, login_as_admin):
         # check if the user is currently logged in
         if selTest.login_cookie:
@@ -384,7 +391,7 @@ class selTest(unittest.TestCase):
         return dict1
 
     def loadPage(self,path=""):
-        self.driver.get('http://adhocracy.lan:5001'+path)
+        self.driver.get(self.adhocracyUrl+path)
 
 if __name__ == '__main__':
     unittest.main()

@@ -10,28 +10,37 @@ function usage {
 	echo "   -a, use all available browsers"
 	echo "   -c, use Chrome for testing"
 	echo "   -f, use Firefox for testing (default)"
+	echo "	 -x, use HTMLUnit for testing"
 	echo "   -h, print this message"
-	echo "   -u, specify url for remote adhocracy server (ex. http://192.168.0.100)"
+	echo "   -u, specify url for remote adhocracy server (ex. http://192.168.0.100:5001)"
+	echo "	 -j, disable Javascript (if supported by browser)"
 	echo "   -*, all other commands will be passed directly to nosetests"
 	exit
 }
-while getopts :u:hacf opt; do
+while getopts :u:hacfjx opt; do
     case "$opt" in
 	    u) adhocracy=$OPTARG ;;
 	    h) usage ;;
-	    a) browser_push "chrome"; browser_push "firefox" ;;
-	    c) browser_push "chrome" ;;
-	    f) browser_push "firefox" ;;
+	    j) disableJS=1 ;;
+	    a) browser_push "CHROME"; browser_push "FIREFOX"; browser_push "HTMLUNIT" ;;
+	    c) browser_push "CHROME" ;;
+	    f) browser_push "FIREFOX" ;;
+	    x) browser_push "HTMLUNIT" ;;
 	    \?) commands="$commands "-"$OPTARG" ;;
     esac
 done
 
 shift $((OPTIND - 1))
 
+# Check if an url for remote adhocracy server has been set
+if [ "$disableJS" = 1 ]; then
+	export selDisableJS=1
+	echo "javascript disabled"
+fi
 
 # Check if an url for remote adhocracy server has been set
 if [ -n "$adhocracy" ]; then
-	export adhocracyUrl=$adhocracy
+	export selAdhocracyUrl=$adhocracy
 fi
 
 # If no browser has been specified, firefox will be used as default
@@ -41,7 +50,7 @@ fi
 
 # Start nosetests for each selected browser
 for i in "${browser[@]}"; do
-	export browser=$i
+	export selBrowser=$i
 	echo "Starting nosetests with $i browser.........."
 	NOSETESTS="nosetests $commands"
 	$NOSETESTS
