@@ -117,12 +117,10 @@ class selTest(unittest.TestCase):
     adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
     paster_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..','..'))+os.sep
 
-    # Login / password for admin-user
+    # Login / password for admin and non-user
     adhocracy_login_admin = {'username':'admin','password':'password'}
+    adhocracy_login_user = {'username':'','password':''}    # will be filled out by _create_default_user
 
-    # Login / password for non-admin-user
-    adhocracy_login_user = {'username':'test2','password':'test'}
-    
     def waitCSS(self, css, wait=10):
         func = lambda driver: driver.find_element_by_css_selector(css)
         WebDriverWait(self.driver, wait).until(func,css)
@@ -183,22 +181,29 @@ class selTest(unittest.TestCase):
                 if not os.path.isfile("/tmp/.X"+str(display_number)+"-lock"):
                     break
             
-            subprocess.Popen(['Xvfb',':'+str(display_number),'-ac','-screen','0','1024x768x16'],stderr=null, stdout=null)
-            #cmd = 'Xvfb', ':'+str(display_number)+ '-ac -screen 0 1024x768x16'
-            #subprocess.Popen(cmd,stderr=null, stdout=null)
-        
-            os.environ["DISPLAY"]=":"+str(display_number)
+            #subprocess.Popen(['Xvfb',':'+str(display_number),'-ac','-screen','0','1024x768x16'],stderr=null, stdout=null)
 
-            # Database isolation - trivial - copy database to some other destination
-            #shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
-
-            # Temp!
-            # Database isolation - trivial - restore our saved database
-            shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
-
-            selTest.adhocracy_remote = False
+            #os.environ["DISPLAY"]=":"+str(display_number)
+#
+            try:  
+                selTest.adhocracyUrl = os.environ["selAdhocracyUrl"]
+                selTest.adhocracy_remote = True
+            except KeyError: 
+                selTest.adhocracyUrl = "http://adhocracy.lan:5001"
+                selTest.adhocracy_remote = False
 
             if not self.adhocracy_remote:
+                # get adhocracy and paster_interactive dir
+                adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
+                paster_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..','..'))+os.sep
+
+                # Database isolation - trivial - copy database to some other destination
+                #shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
+    
+                # Temp!
+                # Database isolation - trivial - restore our saved database
+                shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
+
                 errors = check_port_free([5001], opts_kill='pgid', opts_gracePeriod=10)
                 if errors:
                     raise Exception("\n".join(errors))
@@ -210,16 +215,11 @@ class selTest(unittest.TestCase):
                 if errors:
                     raise Exception("\n".join(errors))
 
-            # Check which browser has been selected. If none, use htmlunit
+            # Check which browser has been selected. If none, use FIREFOX
             try:  
                 selTest.selectedBrowser = os.environ["selBrowser"]
             except KeyError:
-                selTest.selectedBrowser = "HTMLUNIT"  # HTMLUNIT
-
-            try:  
-                selTest.adhocracyUrl = os.environ["selAdhocracyUrl"]
-            except KeyError: 
-                selTest.adhocracyUrl = "http://adhocracy.lan:5001"
+                selTest.selectedBrowser = "FIREFOX"  # HTMLUNIT
 
             try:  
                 selTest.disableJs = os.environ["selDisableJS"]
@@ -257,14 +257,16 @@ class selTest(unittest.TestCase):
                 fp = webdriver.FirefoxProfile()
                 
                 if(selTest.disableJs == "1"):
-                    fp.SetPreference("javascript.enabled", False);
-                
+                    fp.set_preference("javascript.enabled", False);
+
                 selTest.driver = webdriver.Firefox(firefox_profile=fp)
             elif self.selectedBrowser == "CHROME":
                 selTest.driver = webdriver.Chrome('res/chromedriver_x64_26.0.1383.0')
                 # No javascript-disable support for chrome!
             else:
                 print "NO VALID BROWSER!!!!!!!!!"
+                # Login / password for non-admin-user
+                
 
             self._create_default_user()
 
@@ -323,10 +325,9 @@ class selTest(unittest.TestCase):
 
         self.waitCSS('#user_menu')
         self.force_logout()
-        selTest.defaultUser = userName
-        selTest.defaultUserPassword = "test"
+        selTest.adhocracy_login_user['username'] = userName
+        selTest.adhocracy_login_user['password'] = 'test'
 
-    
     def _login_user(self):
         self.loadPage()
         
@@ -349,7 +350,7 @@ class selTest(unittest.TestCase):
             if cookie["name"] == "adhocracy_login":
                 selTest.login_cookie = cookie
 
-    def ensure_login(self, login_as_admin):
+    def ensure_login(self, login_as_admin=False):
         # check if the user is currently logged in
         if selTest.login_cookie:
             # only do something if the current login-type differs from the desired login-type

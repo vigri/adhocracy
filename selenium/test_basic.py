@@ -75,15 +75,30 @@ class Test_basic(selTest):
     def test_create_proposal_path(self):
         instanceName = "Feedback"
 
-        self.ensure_login(login_as_admin=True)
+        self.ensure_login()
         self.loadPage()
 
         l_instances = self.waitCSS('#nav_instances > a')
         l_instances.click()
 
+        # Temp. Display bug in adhocracy!!
+        self.loadPage("/instance?instances_page=1&instances_size=100&instances_sort=-activity")
+
         l_test_instance = self.waitXpath("//div[@id='instance_table']//h3/a[contains(text(), '"+instanceName+"')]")
         l_test_instance.click()
 
+        l_proposals = self.waitCSS('#subnav-proposals > a')
+        
+        
+        #self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
+        try:
+            b_join_group = self.waitCSS('.message .register > a',wait=2)
+            b_join_group.click()
+            # after the click we wait 2 seconds to see if the feedback-form is visible to the user
+        except:
+            print "no need to join!!!"
+            
+            
         l_proposals = self.waitCSS('#subnav-proposals > a')
         l_proposals.click()
 
@@ -101,6 +116,8 @@ class Test_basic(selTest):
 
         self.ensure_login(login_as_admin=True)
         self.loadPage("/i/feedback/proposal/new")
+
+        
 
         i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
         i_label.send_keys(proposalName)
@@ -150,8 +167,8 @@ class Test_basic(selTest):
     @jsRequired
     @additionalInfoOnException
     def test_create_proposal_comment(self):
-        self.ensure_login(login_as_admin=True)
-        self.loadPage(self.defaultProposalUrl)       # TODO: Dynamic!
+        self.ensure_login()
+        self.loadPage(self.defaultProposalUrl)
 
         self.waitCSS('#discussions')
 
@@ -169,7 +186,7 @@ class Test_basic(selTest):
     @jsRequired
     @additionalInfoOnException
     def test_create_feedback(self):
-        self.ensure_login(login_as_admin=True)
+        self.ensure_login()
         self.loadPage()
 
         feedback_button = self.waitCSS('a#feedback_button')
