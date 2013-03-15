@@ -45,12 +45,13 @@ We have no items in the rss feed yet::
     >>> len(browser.xpath('//item'))
     0
 
-If we add content in the test instance an the feed contains an item
+If we add content in the test instance the feed contains an item
 for the event::
 
     >>> admin = make_browser()
     >>> admin.login('admin')
     >>> admin.open(instance_url)
+    >>> admin.follow('Proposals')
     >>> admin.follow('new proposal')
     >>> form = admin.getForm(name='create_proposal')
     >>> form.getControl(name='label').value = u'Test Proposal'
@@ -63,6 +64,7 @@ for the event::
     1
 
     >>> admin.open(instance_url)
+    >>> admin.follow('Proposals')
     >>> admin.follow('new proposal')
     >>> form = admin.getForm(name='create_proposal')
     >>> form.getControl(name='label').value = u'Test Proposal 2'

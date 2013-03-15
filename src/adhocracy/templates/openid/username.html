@@ -1,0 +1,25 @@
+<%inherit file="/template.html" />
+<%def name="title()">${_("Select a user name")}</%def>
+
+<%def name="breadcrumbs()">
+    ${h.instance.breadcrumbs(c.instance)|n} &raquo; ${_("User name")}
+</%def>
+
+<%block name="headline">
+<h1>${_("Select a user name")}</h1>
+
+    <div class="infobox">
+        ${_('A unique user name is required for you complete sign up and '
+            'login. The user name "%s" received from your OpenID provider is '
+            'invalid or already used. Please provide a different, unique user '
+            'name.') % c.openid_username}
+    </div>
+
+<div class="mainbar">
+    <form name="login" method="POST">
+        <label for="login">${_('Username:')}</label>
+        <input name="login" type="text" value=""/>
+        <input type="submit" value="${_('Continue')}"/>
+    </form>
+</div>
+</%block>
