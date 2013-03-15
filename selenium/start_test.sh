@@ -45,7 +45,7 @@ fi
 
 # If no browser has been specified, firefox will be used as default
 if [ ${#browser[@]} == 0 ]; then
-	browser_push "firefox"
+	browser_push "FIREFOX"
 fi
 
 # Start nosetests for each selected browser
