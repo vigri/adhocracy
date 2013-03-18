@@ -8,8 +8,8 @@ function browser_push(){
 function usage {
 	echo "Run nosetests with additional features"
 	echo "   -a, use all available browsers"
-	echo "   -c, use Chrome for testing"
-	echo "   -f, use Firefox for testing (default)"
+	echo "   -c, use Chrome for testing (default)"
+	echo "   -f, use Firefox for testing"
 	echo "	 -x, use HTMLUnit for testing"
 	echo "   -h, print this message"
 	echo "   -u, specify url for remote adhocracy server (ex. http://192.168.0.100:5001)"
@@ -22,10 +22,10 @@ while getopts :u:hacfjx opt; do
 	    u) adhocracy=$OPTARG ;;
 	    h) usage ;;
 	    j) disableJS=1 ;;
-	    a) browser_push "CHROME"; browser_push "FIREFOX"; browser_push "HTMLUNIT" ;;
-	    c) browser_push "CHROME" ;;
-	    f) browser_push "FIREFOX" ;;
-	    x) browser_push "HTMLUNIT" ;;
+	    a) browser_push "chrome"; browser_push "firefox"; browser_push "htmlunit" ;;
+	    c) browser_push "chrome" ;;
+	    f) browser_push "firefox" ;;
+	    x) browser_push "htmlunit" ;;
 	    \?) commands="$commands "-"$OPTARG" ;;
     esac
 done

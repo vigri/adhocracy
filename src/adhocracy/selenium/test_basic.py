@@ -23,15 +23,15 @@ class Test_basic(selTest):
 
     @additionalInfoOnException
     def test_title_help(self):
-        self.loadPage("/_pages/help")
+        self.loadPage("/static/help.html")
         title_tag = self.waitCSS('title')
-        self.assertTrue("Hilfe" in title_tag.text)
+        self.assertTrue("Adhocracy" in title_tag.text)
 
     @additionalInfoOnException
     def test_title_imprint(self):
-        self.loadPage("/_pages/imprint")
+        self.loadPage("/static/imprint.html")
         title_tag = self.waitCSS('title')
-        self.assertTrue("Imprint" in title_tag.text)
+        self.assertTrue("Adhocracy" in title_tag.text)
 
 
     @additionalInfoOnException
@@ -48,7 +48,7 @@ class Test_basic(selTest):
     @additionalInfoOnException
     def test_create_instance(self):
         creationTime = int(time.time())
-        instanceName = "Test "+str(creationTime)+"_"+self.selectedBrowser
+        instanceName = "Test "+str(creationTime)+"_"+self.envSelectedBrowser
         instanceDescription = "Selenium Test Instance"
         instanceKey = "t"+str(creationTime)
 
@@ -70,10 +70,10 @@ class Test_basic(selTest):
 
         self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
         selTest.testInstanceName = instanceName
-
+    """
     @additionalInfoOnException
     def test_create_proposal_path(self):
-        instanceName = "Feedback"
+        instanceName = "Test Instance"
 
         self.ensure_login()
         self.loadPage()
@@ -110,12 +110,12 @@ class Test_basic(selTest):
     @additionalInfoOnException
     def test_create_proposal(self):
         creationTime = int(time.time())
-        proposalName = "Test "+str(creationTime)+"_"+self.selectedBrowser
+        proposalName = "Test "+str(creationTime)+"_"+self.envSelectedBrowser
         proposalDescription = "Selenium Test Proposal"
         proposalTags = "Test Tag"
 
         self.ensure_login(login_as_admin=True)
-        self.loadPage("/i/feedback/proposal/new")
+        self.loadPage("/i/test/proposal/new")
 
         
 
@@ -137,21 +137,26 @@ class Test_basic(selTest):
         currentUrl_relPath = currentUrl.index('/i/')
         selTest.defaultProposalUrl = currentUrl[currentUrl_relPath:]
         
-
+    """
     @additionalInfoOnException
     def test_register(self):
-        self.force_logout()
+        creationTime = int(time.time())
+        userName = str(creationTime)+self.envSelectedBrowser
         
+        self.force_logout()
         self.loadPage()
         
-        b_register = self.waitCSS('div.register a.button.link_register_now')
+        l_login = self.waitCSS('#nav_login > a')
+        l_login.click()
+ 
+        b_register = self.waitCSS('form[name="login"] a')
         b_register.click()
         
         i_username = self.waitCSS('form[name="create_user"] input[name="user_name"]')
-        i_username.send_keys("selenium_user")
+        i_username.send_keys(userName)
         
         i_email = self.waitCSS('form[name="create_user"] input[name="email"]')
-        i_email.send_keys("selenium_user@example.com")
+        i_email.send_keys(userName+"@example.com")
         
         i_password = self.waitCSS('form[name="create_user"] input[name="password"]')
         i_password.send_keys("test")
@@ -163,7 +168,9 @@ class Test_basic(selTest):
         b_submit.click()
 
         self.waitCSS('#user_menu')
-
+        
+        selTest.pFfmpeg.kill()
+"""
     @jsRequired
     @additionalInfoOnException
     def test_create_proposal_comment(self):
@@ -212,5 +219,6 @@ class Test_basic(selTest):
         b_submit.click()
 
         self.waitCSS('#discussions')
+"""
 if __name__ == '__main__':
     unittest.main()

@@ -121,6 +121,8 @@ class selTest(unittest.TestCase):
     adhocracy_login_admin = {'username':'admin','password':'password'}
     adhocracy_login_user = {'username':'','password':''}    # will be filled out by _create_default_user
 
+    
+    
     def waitCSS(self, css, wait=10):
         func = lambda driver: driver.find_element_by_css_selector(css)
         WebDriverWait(self.driver, wait).until(func,css)
@@ -150,123 +152,167 @@ class selTest(unittest.TestCase):
         os.killpg(pid, signal.SIGTERM)
 
     def start_adhocracy(self):
-        proc = subprocess.Popen(selTest.paster_dir+'paster_interactive.sh',stderr=self.logfile, stdout=self.logfile, shell=True, preexec_fn=os.setsid)
+        errors = check_port_free([5001], opts_kill='pgid', opts_gracePeriod=10)
+        if errors:
+            raise Exception("\n".join(errors))
+
+        proc = subprocess.Popen(selTest.adhocracy_dir+'bin/adhocracy_interactive.sh',stderr=self.logfile, stdout=self.logfile, shell=True, preexec_fn=os.setsid)
+
+        errors = check_port_free([5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
+        if errors:
+            raise Exception("\n".join(errors))
+
         return proc
 
     def shutdown_adhocracy(self, pid):
         os.killpg(pid, signal.SIGTERM)
 
+    def _create_xvfb_display(self):
+        # Used for xvfb output. For debugging purposes this can be set to a file
+        null=open('/dev/null','wb')
+
+        # Get virtual display
+        # get first free virtual display number
+        display_number = 0
+        while True:
+            display_number += 1
+            if not os.path.isfile("/tmp/.X"+str(display_number)+"-lock"):
+                break
+
+        subprocess.Popen(['Xvfb',':'+str(display_number),'-ac','-screen','0','1024x768x16'],stderr=null, stdout=null)
+        os.environ["DISPLAY"]=":"+str(display_number)
+
+    def _create_video(self):
+        # to get a better quality, decrease the qmax parameter
+
+        null=open('/dev/null','wb')
+
+        creationTime = int(time.time())
+        video_path = '/tmp/seleniumTest_'+str(creationTime)+'.mpg'
+        selTest.pFfmpeg = subprocess.Popen(['ffmpeg','-f','x11grab','-r','25','-s','1024x768','-qmax','6','-i',':'+os.environ["DISPLAY"]+'.0','/tmp/blubb.mpg'],stderr=null, stdout=null)
+
+    def _database_backup_create(self):
+        # Database isolation - trivial - copy database to some other destination
+        shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
+
+    #def _database_backup_restore(self):
+        # Database isolation - trivial - restore our saved database
+        #shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
+
+
+    def _create_webdriver(self,browser):
+        if browser == "htmlunit":
+            errors = check_port_free([4444], opts_kill='pgid', opts_gracePeriod=10)
+            if errors:
+                raise Exception("\n".join(errors))
+        
+            # Start Selenium Server Standalone
+            selTest.sel_server = self.start_selenium_server_standalone()
+            
+            errors = check_port_free([4444], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
+            if errors:
+                raise Exception("\n".join(errors))
+
+            desired_caps = webdriver.DesiredCapabilities.HTMLUNIT
+            desired_caps['version'] = "2"
+
+            if(selTest.envDisableJs):
+                desired_caps['javascriptEnabled'] = "False"
+            else:
+                desired_caps['javascriptEnabled'] = "True"
+
+            selTest.driver = webdriver.Remote(
+            command_executor = 'http://127.0.0.1:4444/wd/hub',
+            desired_capabilities=desired_caps
+            )
+        elif browser == "firefox":
+            fp = webdriver.FirefoxProfile()
+            
+            if(selTest.envDisableJs):
+                fp.set_preference("javascript.enabled", False);
+
+            selTest.driver = webdriver.Firefox(firefox_profile=fp)
+        elif browser == "chrome":
+            selTest.driver = webdriver.Chrome('res/chromedriver_x64_26.0.1383.0')
+            # No javascript-disable support for chrome!
+        else:
+            raise Exception("Invalid browser selected")
+            
     def setUp(self):
         if not self.setup_done:
             selTest.setup_done = True
+            
+            pFfmpeg = None  # Holds the subprocess of ffmpeg - if used
+            
+            # get configuration File
             #if not os.path.isfile("selenium.ini"):
             #    raise Exception("Configuration file not found!")
 
             # Path to configuration file
             selTest.Config.read("selenium.ini")
-            selTest.verificationErrors = []
 
+
+            selTest.verificationErrors = []
             selTest.defaultUser = ""
             selTest.defaultUserPassword = ""
             selTest.defaultProposalUrl = ""
 
-            # Used for xvfb output. For debugging purposes this can be set to file
-            null=open('/dev/null','wb')
 
-            # Get virtual display
-            # get first free virtual display number
-            display_number = 0
-            while True:
-                display_number += 1
-                if not os.path.isfile("/tmp/.X"+str(display_number)+"-lock"):
-                    break
-            
-            #subprocess.Popen(['Xvfb',':'+str(display_number),'-ac','-screen','0','1024x768x16'],stderr=null, stdout=null)
+            ##### Process environment variables
 
-            #os.environ["DISPLAY"]=":"+str(display_number)
-#
+            # disable Xvfb
+            selTest.envShowTests = os.environ.get("selShowTests","") =="1"
+
+            # create video
+            selTest.envCreateVideo = os.environ.get("selCreateVideo","") =="1"
+
+            # selected browser
+            try:  
+                selTest.envSelectedBrowser = os.environ["selBrowser"]
+            except KeyError:
+                selTest.envSelectedBrowser = "chrome"
+
+            # javascript
+            selTest.envDisableJs = os.environ.get("selDisableJS","") =="1"
+
+            # start local adhocracy server
+            selTest.envStartAdh = os.environ.get("selStartAdh","") =="1"
+
+            # remote adhocracy url
             try:  
                 selTest.adhocracyUrl = os.environ["selAdhocracyUrl"]
                 selTest.adhocracy_remote = True
+                selTest.envStartAdh = False
             except KeyError: 
                 selTest.adhocracyUrl = "http://adhocracy.lan:5001"
                 selTest.adhocracy_remote = False
 
-            if not self.adhocracy_remote:
-                # get adhocracy and paster_interactive dir
-                adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
-                paster_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..','..'))+os.sep
 
-                # Database isolation - trivial - copy database to some other destination
-                #shutil.copyfile(os.path.join(selTest.adhocracy_dir,'var','development.db'),os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'))       
-    
-                # Temp!
-                # Database isolation - trivial - restore our saved database
-                shutil.copyfile(os.path.join(selTest.adhocracy_dir,'src','adhocracy','selenium','bak_db','adhocracy_backup.db'),os.path.join(selTest.adhocracy_dir,'var','development.db'))
+            #### Take actions based on env. vars.
 
-                errors = check_port_free([5001], opts_kill='pgid', opts_gracePeriod=10)
-                if errors:
-                    raise Exception("\n".join(errors))
+            # Since htmlunit has no real display output, envShowTests and envCreateVideo cannot be used
+            if self.envSelectedBrowser == "htmlunit":
+                selTest.envShowTests = False;
+                selTest.envCreateVideo = False
 
-                # Start Adhocracy
-                selTest.adhocracy = self.start_adhocracy()  
-
-                errors = check_port_free([5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
-                if errors:
-                    raise Exception("\n".join(errors))
-
-            # Check which browser has been selected. If none, use FIREFOX
-            try:  
-                selTest.selectedBrowser = os.environ["selBrowser"]
-            except KeyError:
-                selTest.selectedBrowser = "FIREFOX"  # HTMLUNIT
-
-            try:  
-                selTest.disableJs = os.environ["selDisableJS"]
-                if(selTest.disableJs != "1"):
-                    selTest.disableJs = "0"
-            except KeyError: 
-                selTest.disableJs = "0"
-
-            # Setup driver based on selected browser
-            if self.selectedBrowser == "HTMLUNIT":
-                errors = check_port_free([4444], opts_kill='pgid', opts_gracePeriod=10)
-                if errors:
-                    raise Exception("\n".join(errors))
-            
-                # Start Selenium Server Standalone
-                selTest.sel_server = self.start_selenium_server_standalone()
-                
-                errors = check_port_free([4444], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
-                if errors:
-                    raise Exception("\n".join(errors))
-
-                desired_caps = webdriver.DesiredCapabilities.HTMLUNIT
-                desired_caps['version'] = "2"
-
-                if(selTest.disableJs == "1"):
-                    desired_caps['javascriptEnabled'] = "False"
-                else:
-                    desired_caps['javascriptEnabled'] = "True"
-
-                selTest.driver = webdriver.Remote(
-                command_executor = 'http://127.0.0.1:4444/wd/hub',
-                desired_capabilities=desired_caps
-                )
-            elif self.selectedBrowser == "FIREFOX":
-                fp = webdriver.FirefoxProfile()
-                
-                if(selTest.disableJs == "1"):
-                    fp.set_preference("javascript.enabled", False);
-
-                selTest.driver = webdriver.Firefox(firefox_profile=fp)
-            elif self.selectedBrowser == "CHROME":
-                selTest.driver = webdriver.Chrome('res/chromedriver_x64_26.0.1383.0')
-                # No javascript-disable support for chrome!
+            if not selTest.envShowTests:
+                self._create_xvfb_display()
             else:
-                print "NO VALID BROWSER!!!!!!!!!"
-                # Login / password for non-admin-user
-                
+                self.envCreateVideo = False
+
+            if self.envCreateVideo:
+                self._create_video()
+            self._create_video()
+            # Start adhocracy server if specified
+            if not self.adhocracy_remote:
+                if self.envStartAdh:
+                    # get adhocracy dir
+                    adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..','..','..'))+os.sep
+                    # Start Adhocracy
+                    selTest.adhocracy = self.start_adhocracy()
+
+            # create webdriver based on selected browser
+            self._create_webdriver(browser=self.envSelectedBrowser)
 
             self._create_default_user()
 
@@ -287,26 +333,13 @@ class selTest(unittest.TestCase):
         
         """
     
-    def ensure_proposal_exists(self,instance_name,proposal_name):
-        self.ensure_login(login_as_admin=True)
-        self.loadPage("/instance")
-        l_instance = self.waitXpath("//li[contains(text(), 'instance_name')]")
-        #l_instance.click();
-        
-        # search and wait
-        if not self.is_text_present(proposal_name):
-            # instance doesn't exists. We need to create it
-            self._test_create_proposal(proposal_name)
 
     @additionalInfoOnException
     def _create_default_user(self):
         # This function creates a default user which can be used for other interactions within tests
         creationTime = int(time.time())
-        userName = str(creationTime)+self.selectedBrowser
-        self.loadPage()
-
-        b_register = self.waitCSS('div.register a.button.link_register_now')
-        b_register.click()
+        userName = str(creationTime)+self.envSelectedBrowser
+        self.loadPage('/register')
 
         i_username = self.waitCSS('form[name="create_user"] input[name="user_name"]')
         i_username.send_keys(userName)
@@ -340,7 +373,7 @@ class selTest(unittest.TestCase):
         i_password = self.waitCSS('input[name="password"]')
         i_password.send_keys(self.adhocracy_login['password'])
 
-        b_submit = self.waitCSS('form#login input[type="submit"]')
+        b_submit = self.waitCSS('form[name="login"] input[type="submit"]')
         b_submit.click()
 
         self.waitCSS('#user_menu')
