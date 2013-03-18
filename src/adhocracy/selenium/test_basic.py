@@ -69,8 +69,17 @@ class Test_basic(selTest):
         b_submit.click()
 
         self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
+        #require_valid_email
+        c_email_verification = self.waitCSS('form[name="create_instance"] input[name="require_valid_email"]')
+        c_email_verification.click()
+
+        b_submit2 = self.waitCSS('form[name="create_instance"] button[type="submit"]')
+        b_submit2.click()
+
+        self.waitCSS('form[name="create_instance"] div.alert.alert-success')
+
         selTest.testInstanceName = instanceName
-    """
+
     @additionalInfoOnException
     def test_create_proposal_path(self):
         instanceName = "Test Instance"
@@ -137,7 +146,7 @@ class Test_basic(selTest):
         currentUrl_relPath = currentUrl.index('/i/')
         selTest.defaultProposalUrl = currentUrl[currentUrl_relPath:]
         
-    """
+
     @additionalInfoOnException
     def test_register(self):
         creationTime = int(time.time())
@@ -170,7 +179,7 @@ class Test_basic(selTest):
         self.waitCSS('#user_menu')
         
         selTest.pFfmpeg.kill()
-"""
+
     @jsRequired
     @additionalInfoOnException
     def test_create_proposal_comment(self):
@@ -219,6 +228,6 @@ class Test_basic(selTest):
         b_submit.click()
 
         self.waitCSS('#discussions')
-"""
+
 if __name__ == '__main__':
     unittest.main()

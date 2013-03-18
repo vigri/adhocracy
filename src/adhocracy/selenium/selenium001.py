@@ -189,7 +189,7 @@ class selTest(unittest.TestCase):
 
         creationTime = int(time.time())
         video_path = '/tmp/seleniumTest_'+str(creationTime)+'.mpg'
-        selTest.pFfmpeg = subprocess.Popen(['ffmpeg','-f','x11grab','-r','25','-s','1024x768','-qmax','6','-i',':'+os.environ["DISPLAY"]+'.0','/tmp/blubb.mpg'],stderr=null, stdout=null)
+        selTest.pFfmpeg = subprocess.Popen(['ffmpeg','-f','x11grab','-r','25','-s','1024x768','-qmax','6','-i',':0.0','/tmp/blubb.mpg'],stderr=null, stdout=null)
 
     def _database_backup_create(self):
         # Database isolation - trivial - copy database to some other destination
@@ -295,6 +295,8 @@ class selTest(unittest.TestCase):
                 selTest.envShowTests = False;
                 selTest.envCreateVideo = False
 
+            selTest.envShowTests = True
+
             if not selTest.envShowTests:
                 self._create_xvfb_display()
             else:
@@ -302,7 +304,7 @@ class selTest(unittest.TestCase):
 
             if self.envCreateVideo:
                 self._create_video()
-            self._create_video()
+            #self._create_video()
             # Start adhocracy server if specified
             if not self.adhocracy_remote:
                 if self.envStartAdh:
