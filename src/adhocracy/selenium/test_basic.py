@@ -5,6 +5,7 @@ import selenium001
 import unittest
 import time
 
+from selenium.common.exceptions import TimeoutException 
 from selenium001 import selTest, additionalInfoOnException, jsRequired
 
 class Test_basic(selTest):
@@ -59,7 +60,6 @@ class Test_basic(selTest):
         i_label.send_keys(instanceName)
 
         i_key = self.waitCSS('form[name="create_instance"] input[name="key"]')
-        #i_key.send_keys(instanceName.replace(" ", ""))   # since the key cannot have whitespaces we need to repleace them in instanceName
         i_key.send_keys(instanceKey)
 
         t_description = self.waitCSS('form[name="create_instance"] textarea[name="description"]')
@@ -97,17 +97,15 @@ class Test_basic(selTest):
         l_test_instance.click()
 
         l_proposals = self.waitCSS('#subnav-proposals > a')
-        
-        
-        #self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
+
+        # Check if the user needs to join the instance, if so, click on the 'join' button
+        # if an timeoutException occurs, it means, we are allready a member and don't need to join
         try:
             b_join_group = self.waitCSS('.message .register > a',wait=2)
             b_join_group.click()
-            # after the click we wait 2 seconds to see if the feedback-form is visible to the user
-        except:
-            print "no need to join!!!"
-            
-            
+        except TimeoutException:
+            pass
+
         l_proposals = self.waitCSS('#subnav-proposals > a')
         l_proposals.click()
 
@@ -119,15 +117,33 @@ class Test_basic(selTest):
     @additionalInfoOnException
     def test_create_proposal(self):
         creationTime = int(time.time())
+        instanceName = "Test"
         proposalName = "Test "+str(creationTime)+"_"+self.envSelectedBrowser
         proposalDescription = "Selenium Test Proposal"
         proposalTags = "Test Tag"
 
         self.ensure_login(login_as_admin=True)
-        self.loadPage("/i/test/proposal/new")
+        self.loadPage("/i/test/proposal")
 
+        # Wait for the page to be loaded
+        self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
+
+        # Check if the user needs to join the instance, if so, click on the 'join' button
+        # if an timeoutException occurs, it means, we are allready a member and don't need to join
+        try:
+            b_join_group = self.waitCSS('.message .register > a',wait=2)
+            b_join_group.click()
+            # Wait for the page to be reloaded
+            self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
+        except TimeoutException:
+            pass
+
+        l_proposals = self.waitCSS('#subnav-proposals > a')
+        l_proposals.click()
+
+        l_new_proposal = self.waitCSS('#new-proposal > a')
+        l_new_proposal.click()
         
-
         i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
         i_label.send_keys(proposalName)
         
@@ -178,7 +194,7 @@ class Test_basic(selTest):
 
         self.waitCSS('#user_menu')
         
-        selTest.pFfmpeg.kill()
+        #selTest.pFfmpeg.kill()
 
     @jsRequired
     @additionalInfoOnException
@@ -202,6 +218,11 @@ class Test_basic(selTest):
     @jsRequired
     @additionalInfoOnException
     def test_create_feedback(self):
+        # Since the feedback title must be unique, we are using the current timestamp and browser for naming
+        creationTime = int(time.time())
+        feedbackTitle = str(creationTime)+self.envSelectedBrowser
+        feedbackDescription = "Selenium Test-Feedback"
+
         self.ensure_login()
         self.loadPage()
 
@@ -214,9 +235,6 @@ class Test_basic(selTest):
 
         if (form_position != "0px"):
             raise Exception("Element not visible")
-
-        feedbackTitle = "Selenium Feedback"
-        feedbackDescription = "Selenium Test-Feedback"
 
         i_title = self.waitCSS('form[name="create_feedback"] input[name="label"]')
         i_title.send_keys(feedbackTitle)

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-class ElementNotFound(Exception):
+class ElementNotFound(BaseException):
     def __init__(self, message): #, Errors):
-        Exception.__init__(self, message)
+        BaseException.__init__(self, message)
 
         #self.Errors = Errors

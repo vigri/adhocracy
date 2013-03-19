@@ -23,7 +23,7 @@ from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
 from ElementNotFound import ElementNotFound
-
+from selenium.common.exceptions import TimeoutException
 
 def setupAll():
     print "setup class"
@@ -124,9 +124,12 @@ class selTest(unittest.TestCase):
     
     
     def waitCSS(self, css, wait=10):
-        func = lambda driver: driver.find_element_by_css_selector(css)
-        WebDriverWait(self.driver, wait).until(func,css)
-        return func(self.driver)
+        try:
+            func = lambda driver: driver.find_element_by_css_selector(css)
+            WebDriverWait(self.driver, wait).until(func,css)
+            return func(self.driver)
+        except TimeoutException:
+            raise ElementNotFound(css)
 
     def waitXpath(self,xpath, wait=10):
         func = lambda driver: driver.find_element_by_xpath(xpath)
