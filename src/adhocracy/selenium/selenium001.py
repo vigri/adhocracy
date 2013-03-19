@@ -135,10 +135,18 @@ class selTest(unittest.TestCase):
             WebDriverWait(self.driver, wait).until(func,css)
             return func(self.driver)
 
-    def waitXpath(self,xpath, wait=10):
-        func = lambda driver: driver.find_element_by_xpath(xpath)
-        WebDriverWait(self.driver, wait).until(func)
-        return func(self.driver)
+    def waitXpath(self,xpath, wait=10, raiseException=True):
+        if raiseException:
+            try:
+                func = lambda driver: driver.find_element_by_xpath(xpath)
+                WebDriverWait(self.driver, wait).until(func)
+                return func(self.driver)
+            except TimeoutException:
+                raise ElementNotFound(xpath)
+        else:
+            func = lambda driver: driver.find_element_by_xpath(xpath)
+            WebDriverWait(self.driver, wait).until(func)
+            return func(self.driver)
 
     def is_text_present(self, text):
         try:

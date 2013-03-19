@@ -179,15 +179,44 @@ class Test_basic(selTest):
         b_submit.click()
 
         self.waitCSS('#user_menu')
-        
+        self.force_logout()
         #selTest.pFfmpeg.kill()
 
-    """@additionalInfoOnException
+    @additionalInfoOnException
     def test_follow_proposal(self):
         self.ensure_login()
         self.loadPage("/i/test/proposal")
-    """
+        
+        self.waitCSS('#proposal_list_header')
 
+        self.ensure_is_member_of_group()
+
+        l_proposals = self.waitCSS('#subnav-proposals > a')
+        l_proposals.click()
+        
+        self.waitCSS('#proposal_list_header')
+
+        # Get the first proposal which can be found
+        try:
+            l_proposal = self.waitCSS('li.content_box h3 > a',raiseException=False)
+        except TimeoutException:
+            raise Exception("No proposal has been found")
+
+        # Due to "Element does not exist in cache"-error we need to save the name and cannot use l_proposal.text later
+        proposalName = l_proposal.text
+        l_proposal.click()
+
+        # Click on the follow button
+        l_follow = self.waitCSS('a.follow_paper')
+        l_follow.click()
+
+        # Now lets see if 'following' is active
+        self.waitCSS('a.follow_paper.active')
+
+        l_watchlist = self.waitCSS('#nav_watchlist > a')
+        l_watchlist.click()
+
+        self.waitXpath("//h3//a[contains(text(), '"+proposalName+"')]")
 
     @jsRequired
     @additionalInfoOnException
