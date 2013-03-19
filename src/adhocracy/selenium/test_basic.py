@@ -180,7 +180,6 @@ class Test_basic(selTest):
 
         self.waitCSS('#user_menu')
         self.force_logout()
-        #selTest.pFfmpeg.kill()
 
     @selTest.additionalInfoOnException
     def test_follow_proposal(self):
@@ -222,7 +221,7 @@ class Test_basic(selTest):
     @selTest.additionalInfoOnException
     def test_create_proposal_comment(self):
         self.ensure_login()
-        self.loadPage(self.defaultProposalUrl)
+        self.loadPage(selTest.defaultProposalUrl)
 
         self.waitCSS('#discussions')
 

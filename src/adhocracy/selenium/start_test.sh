@@ -13,11 +13,12 @@ function usage {
 	echo "	 -x, use HTMLUnit for testing"
 	echo "   -h, print this message"
 	echo "   -u, specify url for remote adhocracy server (ex. http://192.168.0.100:5001)"
+	echo "   -w, start adhocracy server"
 	echo "	 -j, disable Javascript (if supported by browser)"
 	echo "   -*, all other commands will be passed directly to nosetests"
 	exit
 }
-while getopts :u:hacfjx opt; do
+while getopts :u:hacfjwx opt; do
     case "$opt" in
 	    u) adhocracy=$OPTARG ;;
 	    h) usage ;;
@@ -25,6 +26,7 @@ while getopts :u:hacfjx opt; do
 	    a) browser_push "chrome"; browser_push "firefox"; browser_push "htmlunit" ;;
 	    c) browser_push "chrome" ;;
 	    f) browser_push "firefox" ;;
+	    w) startAdh=1 ;;
 	    x) browser_push "htmlunit" ;;
 	    \?) commands="$commands "-"$OPTARG" ;;
     esac
@@ -35,7 +37,13 @@ shift $((OPTIND - 1))
 # Check if an url for remote adhocracy server has been set
 if [ "$disableJS" = 1 ]; then
 	export selDisableJS=1
-	echo "javascript disabled"
+	#echo "javascript disabled"
+fi
+
+# Check if we should start the adhocracy server
+if [ "$startAdh" = 1 ]; then
+	export selStartAdh=1
+	echo "Start adhocracy...."
 fi
 
 # Check if an url for remote adhocracy server has been set
