@@ -123,13 +123,19 @@ class selTest(unittest.TestCase):
 
     
     
-    def waitCSS(self, css, wait=10):
-        try:
+    def waitCSS(self, css, wait=10, raiseException=True):
+        # the raiseException parameter is needed for functions which handle exceptions on their own
+        if raiseException:
+            try:
+                func = lambda driver: driver.find_element_by_css_selector(css)
+                WebDriverWait(self.driver, wait).until(func,css)
+                return func(self.driver)
+            except TimeoutException:
+                raise ElementNotFound(css)
+        else:
             func = lambda driver: driver.find_element_by_css_selector(css)
             WebDriverWait(self.driver, wait).until(func,css)
             return func(self.driver)
-        except TimeoutException:
-            raise ElementNotFound(css)
 
     def waitXpath(self,xpath, wait=10):
         func = lambda driver: driver.find_element_by_xpath(xpath)

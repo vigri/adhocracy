@@ -100,8 +100,9 @@ class Test_basic(selTest):
 
         # Check if the user needs to join the instance, if so, click on the 'join' button
         # if an timeoutException occurs, it means, we are allready a member and don't need to join
+        # raiseException is set to False, so nothing happens if the 'join' button is not found
         try:
-            b_join_group = self.waitCSS('.message .register > a',wait=2)
+            b_join_group = self.waitCSS('.message .register > a',wait=2,raiseException=False)
             b_join_group.click()
         except TimeoutException:
             pass
@@ -122,7 +123,7 @@ class Test_basic(selTest):
         proposalDescription = "Selenium Test Proposal"
         proposalTags = "Test Tag"
 
-        self.ensure_login(login_as_admin=True)
+        self.ensure_login()
         self.loadPage("/i/test/proposal")
 
         # Wait for the page to be loaded
@@ -130,8 +131,9 @@ class Test_basic(selTest):
 
         # Check if the user needs to join the instance, if so, click on the 'join' button
         # if an timeoutException occurs, it means, we are allready a member and don't need to join
+        # raiseException is set to False, so nothing happens if the 'join' button is not found
         try:
-            b_join_group = self.waitCSS('.message .register > a',wait=2)
+            b_join_group = self.waitCSS('.message .register > a',wait=2,raiseException=False)
             b_join_group.click()
             # Wait for the page to be reloaded
             self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
