@@ -5,10 +5,17 @@ import selenium001
 import unittest
 import time
 
-from selenium.common.exceptions import TimeoutException 
-from selenium001 import selTest#,additionalInfoOnException, jsRequired
+from selenium.common.exceptions import TimeoutException
+from selenium001 import selTest  # ,additionalInfoOnException, jsRequired
+
 
 class Test_basic(selTest):
+
+    @selTest.additionalInfoOnException
+    def test_atitle_aaGoogle(self):
+        self.driver.get("http://www.google.de")
+        title_tag = self.waitCSS('title')
+        self.assertTrue("Google" in title_tag.text)
 
     @selTest.additionalInfoOnException
     def test_title_adhocracy(self):
@@ -34,7 +41,6 @@ class Test_basic(selTest):
         title_tag = self.waitCSS('title')
         self.assertTrue("Adhocracy" in title_tag.text)
 
-
     @selTest.additionalInfoOnException
     def test_create_instance_path(self):
         self.ensure_login(login_as_admin=True)
@@ -49,9 +55,9 @@ class Test_basic(selTest):
     @selTest.additionalInfoOnException
     def test_create_instance(self):
         creationTime = int(time.time())
-        instanceName = "Test "+str(creationTime)+"_"+self.envSelectedBrowser
+        instanceName = "Test " + str(creationTime) + "_" + self.envSelectedBrowser
         instanceDescription = "Selenium Test Instance"
-        instanceKey = "t"+str(creationTime)
+        instanceKey = "t" + str(creationTime)
 
         self.ensure_login(login_as_admin=True)
         self.loadPage("/instance/new")
@@ -64,11 +70,11 @@ class Test_basic(selTest):
 
         t_description = self.waitCSS('form[name="create_instance"] textarea[name="description"]')
         t_description.send_keys(instanceDescription)
-    
+
         b_submit = self.waitCSS('form[name="create_instance"] button[type="submit"]')
         b_submit.click()
 
-        self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
+        self.waitXpath("//h2[contains(text(), '" + instanceName + "')]")
         #require_valid_email
         c_email_verification = self.waitCSS('form[name="create_instance"] input[name="require_valid_email"]')
         c_email_verification.click()
@@ -93,7 +99,7 @@ class Test_basic(selTest):
         # Temp. Display bug in adhocracy!!
         self.loadPage("/instance?instances_page=1&instances_size=100&instances_sort=-activity")
 
-        l_test_instance = self.waitXpath("//div[@id='instance_table']//h3/a[contains(text(), '"+instanceName+"')]")
+        l_test_instance = self.waitXpath("//div[@id='instance_table']//h3/a[contains(text(), '" + instanceName + "')]")
         l_test_instance.click()
 
         l_proposals = self.waitCSS('#subnav-proposals > a')
@@ -112,7 +118,7 @@ class Test_basic(selTest):
     def test_create_proposal(self):
         creationTime = int(time.time())
         instanceName = "Test"
-        proposalName = "Test "+str(creationTime)+"_"+self.envSelectedBrowser
+        proposalName = "Test " + str(creationTime) + "_" + self.envSelectedBrowser
         proposalDescription = "Selenium Test Proposal"
         proposalTags = "Test Tag"
 
@@ -120,7 +126,7 @@ class Test_basic(selTest):
         self.loadPage("/i/test/proposal")
 
         # Wait for the page to be loaded
-        self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
+        self.waitXpath("//h2[contains(text(), '" + instanceName + "')]")
 
         self.ensure_is_member_of_group()
 
@@ -129,16 +135,16 @@ class Test_basic(selTest):
 
         l_new_proposal = self.waitCSS('#new-proposal > a')
         l_new_proposal.click()
-        
+
         i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
         i_label.send_keys(proposalName)
-        
+
         i_tags = self.waitCSS('form[name="create_proposal"] input[name="tags"]')
         i_tags.send_keys(proposalTags)
-        
+
         t_description = self.waitCSS('form[name="create_proposal"] textarea[name="text"]')
         t_description.send_keys(proposalDescription)
-        
+
         b_submit = self.waitCSS('form[name="create_proposal"] button[type="submit"]')
         b_submit.click()
 
@@ -147,34 +153,33 @@ class Test_basic(selTest):
         currentUrl = self.driver.current_url
         currentUrl_relPath = currentUrl.index('/i/')
         selTest.defaultProposalUrl = currentUrl[currentUrl_relPath:]
-        
 
     @selTest.additionalInfoOnException
     def test_register(self):
         creationTime = int(time.time())
-        userName = str(creationTime)+self.envSelectedBrowser
-        
+        userName = str(creationTime) + self.envSelectedBrowser
+
         self.force_logout()
         self.loadPage()
-        
+
         l_login = self.waitCSS('#nav_login > a')
         l_login.click()
- 
+
         b_register = self.waitCSS('form[name="login"] a')
         b_register.click()
-        
+
         i_username = self.waitCSS('form[name="create_user"] input[name="user_name"]')
         i_username.send_keys(userName)
-        
+
         i_email = self.waitCSS('form[name="create_user"] input[name="email"]')
-        i_email.send_keys(userName+"@example.com")
-        
+        i_email.send_keys(userName + "@example.com")
+
         i_password = self.waitCSS('form[name="create_user"] input[name="password"]')
         i_password.send_keys("test")
-        
+
         i_password2 = self.waitCSS('form[name="create_user"] input[name="password_confirm"]')
         i_password2.send_keys("test")
-        
+
         b_submit = self.waitCSS('form[name="create_user"] input[type="submit"]')
         b_submit.click()
 
@@ -185,19 +190,19 @@ class Test_basic(selTest):
     def test_follow_proposal(self):
         self.ensure_login()
         self.loadPage("/i/test/proposal")
-        
+
         self.waitCSS('#proposal_list_header')
 
         self.ensure_is_member_of_group()
 
         l_proposals = self.waitCSS('#subnav-proposals > a')
         l_proposals.click()
-        
+
         self.waitCSS('#proposal_list_header')
 
         # Get the first proposal which can be found
         try:
-            l_proposal = self.waitCSS('li.content_box h3 > a',raiseException=False)
+            l_proposal = self.waitCSS('li.content_box h3 > a', raiseException=False)
         except TimeoutException:
             raise Exception("No proposal has been found")
 
@@ -215,7 +220,7 @@ class Test_basic(selTest):
         l_watchlist = self.waitCSS('#nav_watchlist > a')
         l_watchlist.click()
 
-        self.waitXpath("//h3//a[contains(text(), '"+proposalName+"')]")
+        self.waitXpath("//h3//a[contains(text(), '" + proposalName + "')]")
 
     @selTest.jsRequired
     @selTest.additionalInfoOnException
@@ -229,7 +234,7 @@ class Test_basic(selTest):
             self.make_element_visible_by_id("new_toplevel_comment")
 
             t_description = self.waitCSS('form[name="new_comment"] textarea[name="text"]')
-            t_description.send_keys("Test comment "+str(x+1))
+            t_description.send_keys("Test comment " + str(x + 1))
 
             b_submit = self.waitCSS('form[name="new_comment"] input[type="submit"]')
             b_submit.click()
@@ -241,7 +246,7 @@ class Test_basic(selTest):
     def test_create_feedback(self):
         # Since the feedback title must be unique, we are using the current timestamp and browser for naming
         creationTime = int(time.time())
-        feedbackTitle = str(creationTime)+self.envSelectedBrowser
+        feedbackTitle = str(creationTime) + self.envSelectedBrowser
         feedbackDescription = "Selenium Test-Feedback"
 
         self.ensure_login()
@@ -262,11 +267,11 @@ class Test_basic(selTest):
 
         t_description = self.waitCSS('form[name="create_feedback"] textarea[name="text"]')
         t_description.send_keys(feedbackDescription)
-        
+
         b_submit = self.waitCSS('form[name="create_feedback"] button[type="submit"]')
         b_submit.click()
 
-        self.waitCSS('#discussions')
+        self.waitCSS('#Adiscussions')
 
 if __name__ == '__main__':
     unittest.main()
