@@ -36,23 +36,23 @@ def _displayInformation(e):
 
     url = gist_upload("Selenium driven test\n"+dt +"\n%r" % e+"]",selTest.driver.page_source,log,dt)
 
-    print 'Exception: %r' % e
-    print 'Sourcecode of website: ' + url
+    print '\n  > Exception: %r' % e
+    print '  > Sourcecode of website: ' + url
     
     """ Since some drivers have no screenshot-support (such htmlunit) the image upload only can be performed
         if the screenshot function is supported
     """
     try:
-        print 'Screenshot: '+ imgur_upload(selTest.driver.get_screenshot_as_base64())
+        print '  > Screenshot: '+ imgur_upload(selTest.driver.get_screenshot_as_base64())
     except Exception:
-        print 'Screenshot: not supported'
+        print '  > Screenshot: not supported'
 
 ### Decorators
 def additionalInfoOnException(func):
     def wrapper(self):
         try:
             func(self)
-        except Exception as e:
+        except BaseException as e:
             _displayInformation(e)
             raise
     wrapper.__name__ = func.__name__
