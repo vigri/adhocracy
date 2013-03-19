@@ -6,36 +6,36 @@ import unittest
 import time
 
 from selenium.common.exceptions import TimeoutException 
-from selenium001 import selTest, additionalInfoOnException, jsRequired
+from selenium001 import selTest#,additionalInfoOnException, jsRequired
 
 class Test_basic(selTest):
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_title_adhocracy(self):
         self.loadPage()
         title_tag = self.waitCSS('title')
         self.assertTrue("Adhocracy" in title_tag.text)
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_title_instances(self):
         self.loadPage("/instance")
         title_tag = self.waitCSS('title')
         self.assertTrue("Adhocracy" in title_tag.text)
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_title_help(self):
         self.loadPage("/static/help.html")
         title_tag = self.waitCSS('title')
         self.assertTrue("Adhocracy" in title_tag.text)
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_title_imprint(self):
         self.loadPage("/static/imprint.html")
         title_tag = self.waitCSS('title')
         self.assertTrue("Adhocracy" in title_tag.text)
 
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_create_instance_path(self):
         self.ensure_login(login_as_admin=True)
         self.loadPage()
@@ -46,7 +46,7 @@ class Test_basic(selTest):
         l_instance_new = self.waitCSS('div.top_actions.title a.button.title.add')
         l_instance_new.click()
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_create_instance(self):
         creationTime = int(time.time())
         instanceName = "Test "+str(creationTime)+"_"+self.envSelectedBrowser
@@ -80,7 +80,7 @@ class Test_basic(selTest):
 
         selTest.testInstanceName = instanceName
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_create_proposal_path(self):
         instanceName = "Test Instance"
 
@@ -108,7 +108,7 @@ class Test_basic(selTest):
 
         i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_create_proposal(self):
         creationTime = int(time.time())
         instanceName = "Test"
@@ -149,7 +149,7 @@ class Test_basic(selTest):
         selTest.defaultProposalUrl = currentUrl[currentUrl_relPath:]
         
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_register(self):
         creationTime = int(time.time())
         userName = str(creationTime)+self.envSelectedBrowser
@@ -182,7 +182,7 @@ class Test_basic(selTest):
         self.force_logout()
         #selTest.pFfmpeg.kill()
 
-    @additionalInfoOnException
+    @selTest.additionalInfoOnException
     def test_follow_proposal(self):
         self.ensure_login()
         self.loadPage("/i/test/proposal")
@@ -218,8 +218,8 @@ class Test_basic(selTest):
 
         self.waitXpath("//h3//a[contains(text(), '"+proposalName+"')]")
 
-    @jsRequired
-    @additionalInfoOnException
+    @selTest.jsRequired
+    @selTest.additionalInfoOnException
     def test_create_proposal_comment(self):
         self.ensure_login()
         self.loadPage(self.defaultProposalUrl)
@@ -237,8 +237,8 @@ class Test_basic(selTest):
 
             self.waitCSS('a[id="start-discussion-button"]')
 
-    @jsRequired
-    @additionalInfoOnException
+    @selTest.jsRequired
+    @selTest.additionalInfoOnException
     def test_create_feedback(self):
         # Since the feedback title must be unique, we are using the current timestamp and browser for naming
         creationTime = int(time.time())
