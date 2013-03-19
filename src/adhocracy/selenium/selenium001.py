@@ -121,8 +121,6 @@ class selTest(unittest.TestCase):
     adhocracy_login_admin = {'username':'admin','password':'password'}
     adhocracy_login_user = {'username':'','password':''}    # will be filled out by _create_default_user
 
-    
-    
     def waitCSS(self, css, wait=10, raiseException=True):
         # the raiseException parameter is needed for functions which handle exceptions on their own
         if raiseException:
@@ -419,6 +417,15 @@ class selTest(unittest.TestCase):
         selTest.login_cookie = ""
         selTest.driver.delete_cookie("adhocracy_login")
 
+    def ensure_is_member_of_group(self):
+        # Check if the user needs to join the instance, if so, click on the 'join' button
+        # if an timeoutException occurs, it means, we are allready a member and don't need to join
+        # raiseException is set to False, so nothing happens if the 'join' button is not found
+        try:
+            b_join_group = self.waitCSS('.message .register > a',wait=2,raiseException=False)
+            b_join_group.click()
+        except TimeoutException:
+            pass
     def make_element_visible_by_id(self,elementId):
         self.driver.execute_script("document.getElementById('"+elementId+"').style.display = 'block';")
 

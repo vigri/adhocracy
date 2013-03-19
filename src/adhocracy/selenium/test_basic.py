@@ -98,14 +98,7 @@ class Test_basic(selTest):
 
         l_proposals = self.waitCSS('#subnav-proposals > a')
 
-        # Check if the user needs to join the instance, if so, click on the 'join' button
-        # if an timeoutException occurs, it means, we are allready a member and don't need to join
-        # raiseException is set to False, so nothing happens if the 'join' button is not found
-        try:
-            b_join_group = self.waitCSS('.message .register > a',wait=2,raiseException=False)
-            b_join_group.click()
-        except TimeoutException:
-            pass
+        self.ensure_is_member_of_group()
 
         l_proposals = self.waitCSS('#subnav-proposals > a')
         l_proposals.click()
@@ -129,16 +122,7 @@ class Test_basic(selTest):
         # Wait for the page to be loaded
         self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
 
-        # Check if the user needs to join the instance, if so, click on the 'join' button
-        # if an timeoutException occurs, it means, we are allready a member and don't need to join
-        # raiseException is set to False, so nothing happens if the 'join' button is not found
-        try:
-            b_join_group = self.waitCSS('.message .register > a',wait=2,raiseException=False)
-            b_join_group.click()
-            # Wait for the page to be reloaded
-            self.waitXpath("//h2[contains(text(), '"+instanceName+"')]")
-        except TimeoutException:
-            pass
+        self.ensure_is_member_of_group()
 
         l_proposals = self.waitCSS('#subnav-proposals > a')
         l_proposals.click()
@@ -197,6 +181,13 @@ class Test_basic(selTest):
         self.waitCSS('#user_menu')
         
         #selTest.pFfmpeg.kill()
+
+    """@additionalInfoOnException
+    def test_follow_proposal(self):
+        self.ensure_login()
+        self.loadPage("/i/test/proposal")
+    """
+
 
     @jsRequired
     @additionalInfoOnException
