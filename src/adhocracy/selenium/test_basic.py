@@ -12,12 +12,6 @@ from selenium001 import selTest  # ,additionalInfoOnException, jsRequired
 class Test_basic(selTest):
 
     @selTest.additionalInfoOnException
-    def test_atitle_aaGoogle(self):
-        self.driver.get("http://www.google.de")
-        title_tag = self.waitCSS('title')
-        self.assertTrue("Google" in title_tag.text)
-
-    @selTest.additionalInfoOnException
     def test_title_adhocracy(self):
         self.loadPage()
         title_tag = self.waitCSS('title')
@@ -88,7 +82,7 @@ class Test_basic(selTest):
 
     @selTest.additionalInfoOnException
     def test_create_proposal_path(self):
-        instanceName = "Test Instance"
+        instanceName = "Feedback"
 
         self.ensure_login()
         self.loadPage()
@@ -117,13 +111,13 @@ class Test_basic(selTest):
     @selTest.additionalInfoOnException
     def test_create_proposal(self):
         creationTime = int(time.time())
-        instanceName = "Test"
+        instanceName = "Feedback"
         proposalName = "Test " + str(creationTime) + "_" + self.envSelectedBrowser
         proposalDescription = "Selenium Test Proposal"
         proposalTags = "Test Tag"
 
         self.ensure_login()
-        self.loadPage("/i/test/proposal")
+        self.loadPage("/i/feedback/proposal")
 
         # Wait for the page to be loaded
         self.waitXpath("//h2[contains(text(), '" + instanceName + "')]")
@@ -189,7 +183,7 @@ class Test_basic(selTest):
     @selTest.additionalInfoOnException
     def test_follow_proposal(self):
         self.ensure_login()
-        self.loadPage("/i/test/proposal")
+        self.loadPage("/i/feedback/proposal")
 
         self.waitCSS('#proposal_list_header')
 
@@ -271,7 +265,7 @@ class Test_basic(selTest):
         b_submit = self.waitCSS('form[name="create_feedback"] button[type="submit"]')
         b_submit.click()
 
-        self.waitCSS('#Adiscussions')
+        self.waitCSS('#discussions')
 
 if __name__ == '__main__':
     unittest.main()

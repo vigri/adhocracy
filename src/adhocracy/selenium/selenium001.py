@@ -46,7 +46,7 @@ class selTest(unittest.TestCase):
             if(cls.driver.desired_capabilities['javascriptEnabled'] == True):
                 func(cls)
             else:
-                print "This function requires JavaScript"
+                print('This function requires JavaScript')
                 return
         wrapper.__name__ = func.__name__
         return wrapper
@@ -68,43 +68,46 @@ class selTest(unittest.TestCase):
 
     @classmethod
     def imgur_upload(cls, picture):
-        #with open(path, 'rb') as f:
-            #picture = base64.b64encode(f.read())
-        data = urllib.urlencode({ 'key' : cls.apikey, 'image' : picture })
-        req = urllib2.Request(cls.url, data)
-        req.add_header('Authorization', 'Client-ID ' + cls.clientId)
+        #Imgur vars
+        clientId = cls.getConfig('Imgur')['clientid']
+        url = cls.getConfig('Imgur')['url']
+        apikey = cls.getConfig('Imgur')['apikey']
+
+        data = urllib.urlencode({ 'key' : apikey, 'image' : picture })
+        req = urllib2.Request(url, data)
+        req.add_header('Authorization', 'Client-ID ' + clientId)
         json_response = urllib2.urlopen(req)
         json_response = json.load(json_response)
 
         if(json_response['status'] == 200):
             return json_response['data']['link']
         else:
-            return "Error while uploading screenshot"
+            return 'Error while uploading screenshot'
 
     @classmethod
     def _displayInformation(cls, e):
-        dt = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        dt = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-        if cls.adhocracy_remote:
-            log = "No logfile available. Existing adhocracy server was used"
+        if not cls.envStartAdh:
+            log = 'No logfile available. Existing adhocracy server was used'
         else:
-            cls.logfile.flush()
+            cls.adhocracy_logfile.flush()
             log = open('logfile', 'r').read()
             if log == "":
-                log = "Error reading logfile"
+                log = 'Error reading logfile'
 
-        url = cls.gist_upload("Selenium driven test (" + cls.envSelectedBrowser + ")\n" + dt + "\n%r" % e + "]", cls.driver.page_source, log, dt)
-
-        print '\n  > Exception: %r' % e
-        print '  > Logfile and HTML sourcecode: ' + url
+        url = cls.gist_upload('Selenium driven test (' + cls.envSelectedBrowser + ')\n' + dt + '\n%r' % e + ']', cls.driver.page_source, log, dt)
+        print('\n  > Exception: %r' % e)
+        print('  > Browser: ' + cls.envSelectedBrowser)
+        print('  > Logfile and HTML sourcecode: ' + url)
 
         """ Since some drivers have no screenshot-support (such htmlunit) the image upload only can be performed
             if the screenshot function is supported
         """
         try:
-            print '  > Screenshot: ' + cls.imgur_upload(cls.driver.get_screenshot_as_base64())
+            print('  > Screenshot: ' + cls.imgur_upload(cls.driver.get_screenshot_as_base64()))
         except Exception:
-            print '  > Screenshot: not supported'
+            print('  > Screenshot: not supported')
 
     #### search-functions
     @classmethod
@@ -136,19 +139,12 @@ class selTest(unittest.TestCase):
             WebDriverWait(cls.driver, wait).until(func)
             return func(cls.driver)
 
-    def is_text_present(self, text):
-        try:
-            el = self.driver.find_element_by_tag_name("body")
-        except NoSuchElementException, e:
-            return False
-        return text in el.text
-
     #### start / shutdown functions (adhocracy, selenium etc.)
     @classmethod
     def start_selenium_server_standalone(cls):
         null = open('/dev/null', 'wb')
-
-        cmd = ['java', '-Djava.security.egd=file:/dev/./urandom', '-jar', '-Dwebdriver.chrome.driver=res/chromedriver_x64_26.0.1383.0', os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'res', 'selenium-2.26.0', 'selenium-server-standalone-2.26.0.jar')]
+        server_path = cls.script_dir + '/' + cls.getConfig('Selenium')['server']
+        cmd = ['java', '-Djava.security.egd=file:/dev/./urandom', '-jar', server_path]
         cls.pSel_server = subprocess.Popen(cmd, stderr=null, stdout=null, preexec_fn=os.setsid)
 
     @classmethod
@@ -157,11 +153,13 @@ class selTest(unittest.TestCase):
 
     @classmethod
     def start_adhocracy(cls):
+        cls.adhocracy_logfile = open('logfile', 'w')
+        
         errors = check_port_free([5001], opts_kill='pgid', opts_gracePeriod=10)
         if errors:
             raise Exception("\n".join(errors))
 
-        cls.pAdhocracy_server = subprocess.Popen(cls.adhocracy_dir + 'bin/adhocracy_interactive.sh', stderr=cls.logfile, stdout=cls.logfile, shell=True, preexec_fn=os.setsid)
+        cls.pAdhocracy_server = subprocess.Popen(cls.adhocracy_dir + 'bin/adhocracy_interactive.sh', stderr=cls.adhocracy_logfile, stdout=cls.adhocracy_logfile, shell=True, preexec_fn=os.setsid)
 
         errors = check_port_free([5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
         if errors:
@@ -180,7 +178,7 @@ class selTest(unittest.TestCase):
     @classmethod
     def _database_backup_restore(cls):
         # Database isolation - trivial - restore our saved database
-        shutil.copyfile(os.path.join(cls.adhocracy_dir, 'var', 'development.db'.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'bak_db', 'adhocracy_backup.db'), os.path.join(selTest.adhocracy_dir, 'var', 'development.db'))
+        shutil.copyfile(os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'bak_db', 'adhocracy_backup.db'), os.path.join(cls.adhocracy_dir, 'var', 'development.db'))
 
     #### xvfb and video-record functions
     @classmethod
@@ -193,7 +191,7 @@ class selTest(unittest.TestCase):
         display_number = 0
         while True:
             display_number += 1
-            if not os.path.isfile("/tmp/.X" + str(display_number) + "-lock"):
+            if not os.path.isfile('/tmp/.X' + str(display_number) + '-lock'):
                 break
 
         cls.pXvfb = subprocess.Popen(['Xvfb', ':' + str(display_number), '-ac', '-screen', '0', '1024x768x16'], stderr=null, stdout=null)
@@ -227,80 +225,65 @@ class selTest(unittest.TestCase):
     #### global setUpClass and tearDownClass, + setUp, tearDown for each function
     @classmethod
     def setUpClass(cls):
-        print "DEBUG: setUpClass ..."
-
         # with Python < 2.7 setUpClass() will not be executed, so this var will not be set to true
         # each test checks if this var has been set to true
         cls.setup_done = True
 
-        cls.adhocracy_remote = False
-        cls.login_cookie = ""
+        # get configuration File
+        cls.script_dir = os.path.dirname(os.path.realpath(__file__))
+        config_path = cls.script_dir + '/selenium.ini'
 
-        #Imgur vars
-        cls.clientId = 'b96e44dc87cf435'
-        cls.url = 'https://api.imgur.com/3/image'
-        cls.apikey = 'f48846809cc73b8bcabbd41335a08525085ed947'
-
-        cls.logfile = open('logfile', 'w')
-
+        if not os.path.isfile(config_path):
+            raise Exception('Configuration file selenium.ini not found!')
         cls.Config = ConfigParser.ConfigParser()
-        # get adhocracy and paster_interactive dir
-        cls.adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..')) + os.sep
-        cls.paster_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..', '..')) + os.sep
+        cls.Config.read(config_path)
+
+        # general vars
+        cls.login_cookie = ''
+        cls.adhocracy_logfile = None
+        cls.adhocracy_dir = cls.getConfig('Adhocracy')['dir']
 
         # Login / password for admin and non-user
         cls.adhocracy_login_admin = {'username': 'admin', 'password': 'password'}
         cls.adhocracy_login_user = {'username': '', 'password': ''}    # will be filled out by _create_default_user
 
-        #selTest.setup_done = True
-
-        #cls.pFfmpeg = None  # Holds the subprocess of ffmpeg - if used
-
-        # get configuration File
-        #if not os.path.isfile("selenium.ini"):
-        #    raise Exception("Configuration file not found!")
-
-        # Path to configuration file
-        cls.Config.read("selenium.ini")
-
-        cls.verificationErrors = []
-        cls.defaultUser = ""
-        cls.defaultUserPassword = ""
-        cls.defaultProposalUrl = ""
+        cls.defaultUser = ''
+        cls.defaultUserPassword = ''
+        cls.defaultProposalUrl = ''
 
         ##### Process environment variables
 
         # disable Xvfb
-        cls.envShowTests = os.environ.get("selShowTests", "") == "1"
+        cls.envShowTests = os.environ.get('selShowTests', '') == '1'
 
         # create video
-        cls.envCreateVideo = os.environ.get("selCreateVideo", "") == "1"
+        cls.envCreateVideo = os.environ.get('selCreateVideo', '') == '1'
 
         # selected browser
         try:
-            cls.envSelectedBrowser = os.environ["selBrowser"]
+            cls.envSelectedBrowser = os.environ['selBrowser']
         except KeyError:
-            cls.envSelectedBrowser = "chrome"
+            cls.envSelectedBrowser = 'chrome'
 
         # javascript
-        cls.envDisableJs = os.environ.get("selDisableJS", "") == "1"
+        cls.envDisableJs = os.environ.get('selDisableJS', '') == '1'
 
         # start local adhocracy server
-        cls.envStartAdh = os.environ.get("selStartAdh", "") == "1"
+        cls.envStartAdh = os.environ.get('selStartAdh', '') == '1'
 
         # remote adhocracy url
         try:
-            cls.adhocracyUrl = os.environ["selAdhocracyUrl"]
+            cls.adhocracyUrl = os.environ['selAdhocracyUrl']
             cls.adhocracy_remote = True
             cls.envStartAdh = False
         except KeyError:
-            cls.adhocracyUrl = "http://adhocracy.lan:5001"
+            cls.adhocracyUrl = 'http://adhocracy.lan:5001'
             cls.adhocracy_remote = False
 
         #### Take actions based on env. vars.
 
         # Since htmlunit has no real display output, envShowTests and envCreateVideo cannot be used
-        if cls.envSelectedBrowser == "htmlunit":
+        if cls.envSelectedBrowser == 'htmlunit':
             cls.envShowTests = False
             cls.envCreateVideo = False
 
@@ -315,8 +298,8 @@ class selTest(unittest.TestCase):
         # Start adhocracy server if specified
         if not cls.adhocracy_remote:
             if cls.envStartAdh:
-                # get adhocracy dir
-                cls.adhocracy_dir = os.path.normpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..', '..')) + os.sep
+                # create a backup of the actual database
+                cls._database_backup_create()
                 # Start Adhocracy
                 cls.start_adhocracy()
 
@@ -327,8 +310,6 @@ class selTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        print "DEBUG: tearDownClass..."
-
         cls.driver.close()
 
         # htmlunit needs a selenium server. If HU has been used, shutdown the server now
@@ -338,6 +319,7 @@ class selTest(unittest.TestCase):
         # if we have started the adhocracy server, we are going to shut it down now
         if cls.envStartAdh:
             cls.shutdown_adhocracy()
+            cls._database_backup_restore()
 
         # check if Xvfb has been used, if so, kill the process
         if not cls.envShowTests:
@@ -346,7 +328,7 @@ class selTest(unittest.TestCase):
         # if we've recorded a video, we'll stop the recording now
         if cls.envCreateVideo:
             cls._stop_video()
-            print '  > Video record: ' + cls.video_path
+            print( '  > Video record: ' + cls.video_path)
 
     def setUp(self):
         if not self.setup_done:
@@ -364,13 +346,13 @@ class selTest(unittest.TestCase):
         i_username.send_keys(userName)
 
         i_email = cls.waitCSS('form[name="create_user"] input[name="email"]')
-        i_email.send_keys(userName + "@example.com")
+        i_email.send_keys(userName + '@example.com')
 
         i_password = cls.waitCSS('form[name="create_user"] input[name="password"]')
-        i_password.send_keys("test")
+        i_password.send_keys('test')
 
         i_password2 = cls.waitCSS('form[name="create_user"] input[name="password_confirm"]')
-        i_password2.send_keys("test")
+        i_password2.send_keys('test')
 
         b_submit = cls.waitCSS('form[name="create_user"] input[type="submit"]')
         b_submit.click()
@@ -401,7 +383,7 @@ class selTest(unittest.TestCase):
 
         cls.cookies = cls.driver.get_cookies()
         for cookie in cls.cookies:
-            if cookie["name"] == "adhocracy_login":
+            if cookie['name'] == 'adhocracy_login':
                 cls.login_cookie = cookie
 
     @classmethod
@@ -428,8 +410,8 @@ class selTest(unittest.TestCase):
     @classmethod
     def force_logout(cls):
         # Delete the login-cookie (if existent) to ensure the user is not logged in
-        cls.login_cookie = ""
-        cls.driver.delete_cookie("adhocracy_login")
+        cls.login_cookie = ''
+        cls.driver.delete_cookie('adhocracy_login')
 
     #### misc functions
     def ensure_is_member_of_group(self):
@@ -443,14 +425,16 @@ class selTest(unittest.TestCase):
             pass
 
     def make_element_visible_by_id(self, elementId):
-        self.driver.execute_script("document.getElementById('" + elementId + "').style.display = 'block';")
+        self.driver.execute_script('document.getElementById("' + elementId + '").style.display = "block";')
 
-    def ConfigSectionMap(self, section):
+    @classmethod
+    def getConfig(cls, section):
+        #http://wiki.python.org/moin/ConfigParserExamples
         dict1 = {}
-        options = self.Config.options(section)
+        options = cls.Config.options(section)
         for option in options:
             try:
-                dict1[option] = self.Config.get(section, option)
+                dict1[option] = cls.Config.get(section, option)
                 if dict1[option] == -1:
                     DebugPrint("skip: %s" % option)
             except:
@@ -459,12 +443,12 @@ class selTest(unittest.TestCase):
         return dict1
 
     @classmethod
-    def loadPage(cls, path=""):
+    def loadPage(cls, path=''):
         cls.driver.get(cls.adhocracyUrl + path)
 
     @classmethod
     def _create_webdriver(cls, browser):
-        if browser == "htmlunit":
+        if browser == 'htmlunit':
             errors = check_port_free([4444], opts_kill='pgid', opts_gracePeriod=10)
             if errors:
                 raise Exception("\n".join(errors))
@@ -477,26 +461,58 @@ class selTest(unittest.TestCase):
                 raise Exception("\n".join(errors))
 
             desired_caps = webdriver.DesiredCapabilities.HTMLUNIT
-            desired_caps['version'] = "2"
+            desired_caps['version'] = '2'
 
             if(cls.envDisableJs):
-                desired_caps['javascriptEnabled'] = "False"
+                desired_caps['javascriptEnabled'] = 'False'
             else:
-                desired_caps['javascriptEnabled'] = "True"
+                desired_caps['javascriptEnabled'] = 'True'
 
             cls.driver = webdriver.Remote(command_executor = 'http://127.0.0.1:4444/wd/hub', desired_capabilities = desired_caps)
-        elif browser == "firefox":
+        elif browser == 'firefox':
             fp = webdriver.FirefoxProfile()
 
             if(cls.envDisableJs):
-                fp.set_preference("javascript.enabled", False)
+                fp.set_preference('javascript.enabled', False)
 
-            cls.driver = webdriver.Firefox(firefox_profile=fp)
-
-        elif browser == "chrome":
-            cls.driver = webdriver.Chrome('res/chromedriver_x64_26.0.1383.0')
+            """
+              Firefox >= 3.6 is needed for using selenium webdriver.
+              first we check if the installed version is okay
+              if not, we check if the user set the env. var. selUseFirefoxBin which will
+              use the firefox binary specified in selenium.ini
+            """
+            if cls.check_firefox_version():
+                # everything okay
+                cls.driver = webdriver.Firefox(firefox_profile=fp)
+            else:
+                # check env. var
+                useFirefoxBin = os.environ.get('selUseFirefoxBin', '') == '1'
+                if not useFirefoxBin:   # TODO Logic wrong!!!
+                    ffbin = webdriver.firefox.firefox_binary.FirefoxBinary(cls.script_dir + '/' + cls.getConfig('Selenium')['firefox'])
+                    cls.driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=ffbin)
+                else:
+                    # installed version of firefox not found or too old.
+                    # user din't set the env. var... we will stop here.
+                    raise Exception('Installed firefox version not found or too old. You may use the env. var. "selUseFirefoxBin" to use a firefox binary specified in selenium.ini')
+        elif browser == 'chrome':
+            cls.driver = webdriver.Chrome(cls.script_dir + '/' + cls.getConfig('Selenium')['chrome'])
             # No javascript-disable support for chrome!
         else:
-            raise Exception("Invalid browser selected")
+            raise Exception('Invalid browser selected: ' + browser)
+
+    @classmethod
+    def check_firefox_version(cls):
+        # checks if firefox version is older than 3.6
+        try:
+            output = subprocess.Popen(['firefox', '--version'], stdout=subprocess.PIPE).communicate()[0]
+        except Exception as e:
+            return False
+        try:
+            major, minor = map(int, re.search(r"(\d+).(\d+)", output).groups())
+        except Exception as e:
+            return False
+        if (major, minor) < (3, 6):
+            return False
+        return True
 if __name__ == '__main__':
     unittest.main()
