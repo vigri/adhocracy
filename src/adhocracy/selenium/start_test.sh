@@ -18,11 +18,12 @@ function usage {
         echo "   -j, disable Javascript (if supported by browser)"
         echo "   -y, make testing visible (not available for htmlunit)"
         echo "   -z, record video (not available for htmlunit)"
+	echo "   -b, upload recorded video on Youtube"
 	echo "   -*, all other commands will be passed directly to nosetests"
         echo ""
 	exit
 }
-while getopts :u:hacfjwxyz opt; do
+while getopts :u:hacfjwxyzb opt; do
     case "$opt" in
 	    u) adhocracy=$OPTARG ;;
 	    h) usage ;;
@@ -34,6 +35,7 @@ while getopts :u:hacfjwxyz opt; do
 	    x) browser_push "htmlunit" ;;
 	    y) testVis=1 ;;
 	    z) video=1 ;;
+	    b) youtube=1 ;;
 	    \?) commands="$commands "-"$OPTARG" ;;
     esac
 done
@@ -44,9 +46,9 @@ echo "######################################"
 # Check if an url for remote adhocracy server has been set
 if [ "$disableJS" = 1 ]; then
 	export selDisableJS=1
-	echo " Javascript:    disabled"
+	echo " Javascript:    off"
 else
-	echo " Javascript:    enabled"
+	echo " Javascript:    on"
 fi
 
 # Check if we should start the adhocracy server
@@ -78,11 +80,18 @@ if [ -n "$video" ]; then
 else
 	echo " Record video:  off"
 fi
+# Check if we should record a video
+if [ -n "$youtube" ]; then
+	export envYoutubeUpload=$youtube
+	echo " Video upload:  on"
+else
+	echo " Video upload:  off"
+fi
 echo "######################################"
 
-# If no browser has been specified, firefox will be used as default
+# If no browser has been specified, chrome will be used as default
 if [ ${#browser[@]} == 0 ]; then
-	browser_push "FIREFOX"
+	browser_push "chrome"
 fi
 
 # Start nosetests for each selected browser

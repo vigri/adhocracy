@@ -196,7 +196,6 @@ class selTest(unittest.TestCase):
             display_number += 1
             if not os.path.isfile('/tmp/.X' + str(display_number) + '-lock'):
                 break
-
         cls.pXvfb = subprocess.Popen(['Xvfb', ':' + str(display_number), '-ac', '-screen', '0', '1024x768x16'], stderr=null, stdout=null)
 
         # make a backup of the old DISPLAY-var
@@ -219,7 +218,7 @@ class selTest(unittest.TestCase):
 
         creationTime = int(time.time())
         cls.video_path = '/tmp/seleniumTest_' + str(creationTime) + '.mpg'
-        cls.pFfmpeg = subprocess.Popen(['ffmpeg', '-f', 'x11grab', '-r', '25', '-s', '1024x768', '-qmax', '6', '-i', ':' + cls.new_display + '.0', cls.video_path], stderr=null, stdout=null)
+        cls.pFfmpeg = subprocess.Popen(['ffmpeg', '-f', 'x11grab', '-r', '25', '-s', '1024x768', '-qmax', '10', '-i', ':' + cls.new_display + '.0', cls.video_path], stderr=null, stdout=null)
 
     @classmethod
     def _stop_video(cls):
@@ -331,7 +330,17 @@ class selTest(unittest.TestCase):
         # if we've recorded a video, we'll stop the recording now
         if cls.envCreateVideo:
             cls._stop_video()
-            print( '  > Video record: ' + cls.video_path)
+            print('  > Video record available: ' + cls.video_path)
+
+            # now check if the user wants the video to be uploaded on youtube
+            envYoutubeUpload = os.environ.get('envYoutubeUpload', '') == '1'
+            if envYoutubeUpload:
+                print('  > Uploading video, please wait...')
+                desc = 'Selenium driven test using ' + cls.envSelectedBrowser
+                title = 'Selenium ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+                output = subprocess.Popen(['python', 'misc/youtube_upload.py', '--email=' + cls.getConfig('Youtube')['email'], '--password=' + cls.getConfig('Youtube')['password'], '--title="' + title + '"', '--description="' + desc + '"', '--category=Tech', '--keywords=Selenium', cls.video_path], stdout=subprocess.PIPE).communicate()[0]
+                print ('  > ' + output)
 
     def setUp(self):
         if not self.setup_done:
