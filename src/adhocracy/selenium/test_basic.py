@@ -235,7 +235,7 @@ class Test_basic(selTest):
 
             self.waitCSS('a[id="start-discussion-button"]')
 
-    @selTest.jsRequired
+    #@selTest.jsRequired
     @selTest.additionalInfoOnException
     def test_create_feedback(self):
         # Since the feedback title must be unique, we are using the current timestamp and browser for naming
@@ -251,7 +251,7 @@ class Test_basic(selTest):
 
         # after the click we wait 2 seconds to see if the feedback-form is visible to the user
         time.sleep(2)
-        form_position = self.driver.execute_script("return document.getElementById('feedback').style.right")
+        form_position = self.execute_js("return document.getElementById('feedback').style.right")
 
         if (form_position != "0px"):
             raise Exception("Element not visible")

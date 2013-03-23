@@ -16,7 +16,7 @@ import json
 import datetime
 import base64
 import ConfigParser
-import multiprocessing
+#import multiprocessing
 import time
 
 from check_port_free import check_port_free
@@ -43,11 +43,14 @@ class selTest(unittest.TestCase):
     @classmethod
     def jsRequired(cls, func):
         def wrapper(cls):
-            if(cls.driver.desired_capabilities['javascriptEnabled'] == True):
-                func(cls)
-            else:
-                print('This function requires JavaScript')
-                return
+            try:
+                cls.driver.execute_script('return 0;')
+            except Exception as e:
+                #print('\n  > Exception: %r' % e)
+                error_text = 'This function requires JavaScript'
+                print('\n  > Exception: ' + error_text)
+                raise Exception(error_text)
+            func(cls)
         wrapper.__name__ = func.__name__
         return wrapper
 
@@ -425,7 +428,13 @@ class selTest(unittest.TestCase):
             pass
 
     def make_element_visible_by_id(self, elementId):
-        self.driver.execute_script('document.getElementById("' + elementId + '").style.display = "block";')
+        self.execute_js('document.getElementById("' + elementId + '").style.display = "block";')
+
+    def execute_js(self,js):
+        try:
+            return self.driver.execute_script(js)
+        except Exception:
+            raise Exception('Error executing JavaScript')
 
     @classmethod
     def getConfig(cls, section):
@@ -492,7 +501,7 @@ class selTest(unittest.TestCase):
                     cls.driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=ffbin)
                 else:
                     # installed version of firefox not found or too old.
-                    # user din't set the env. var... we will stop here.
+                    # user didn't set the env. var... we will stop here.
                     raise Exception('Installed firefox version not found or too old. You may use the env. var. "selUseFirefoxBin" to use a firefox binary specified in selenium.ini')
         elif browser == 'chrome':
             cls.driver = webdriver.Chrome(cls.script_dir + '/' + cls.getConfig('Selenium')['chrome'])
