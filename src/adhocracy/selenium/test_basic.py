@@ -133,7 +133,7 @@ class Test_basic(selTest):
         i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
         i_label.send_keys(proposalName)
 
-        i_tags = self.waitCSS('form[name="create_proposal"] input[name="tags"]')
+        i_tags = self.waitCSS('form[name="create_proposal"] input[name="tag"]')
         i_tags.send_keys(proposalTags)
 
         t_description = self.waitCSS('form[name="create_proposal"] textarea[name="text"]')
