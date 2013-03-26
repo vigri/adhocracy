@@ -11,7 +11,9 @@ function usage {
 	echo "   -a, use all available browsers"
 	echo "   -c, use Chrome for testing (default)"
 	echo "   -f, use Firefox for testing"
+        echo "   -b, use Firefox binary specified in selenium.ini"
         echo "   -x, use HTMLUnit for testing"
+	echo ""
 	echo "   -h, print this message"
 	echo "   -u, specify url for remote adhocracy server (ex. http://192.168.0.100:5001)"
         echo "   -w, start adhocracy server"
@@ -23,7 +25,7 @@ function usage {
         echo ""
 	exit
 }
-while getopts :u:hacfjwxyzb opt; do
+while getopts :u:hacfbjwxyzb opt; do
     case "$opt" in
 	    u) adhocracy=$OPTARG ;;
 	    h) usage ;;
@@ -31,6 +33,7 @@ while getopts :u:hacfjwxyzb opt; do
 	    a) browser_push "chrome"; browser_push "firefox"; browser_push "htmlunit" ;;
 	    c) browser_push "chrome" ;;
 	    f) browser_push "firefox" ;;
+            b) ffbin=1 ;;
 	    w) startAdh=1 ;;
 	    x) browser_push "htmlunit" ;;
 	    y) testVis=1 ;;
@@ -87,6 +90,11 @@ if [ -n "$youtube" ]; then
 else
 	echo " Video upload:  off"
 fi
+# Check if we should record a video
+if [ -n "$ffbin" ]; then
+	export selUseFirefoxBin=$ffbin
+fi
+
 echo "######################################"
 
 # If no browser has been specified, chrome will be used as default

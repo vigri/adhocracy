@@ -16,7 +16,8 @@ import json
 import datetime
 import base64
 import ConfigParser
-#import multiprocessing
+import signal
+import sys
 import time
 
 from check_port_free import check_port_free
@@ -25,6 +26,7 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
 from ElementNotFound import ElementNotFound
 from selenium.common.exceptions import TimeoutException
+
 
 
 class selTest(unittest.TestCase):
@@ -61,8 +63,8 @@ class selTest(unittest.TestCase):
             "description": desc,
             "public": False,
             "files": {
-                     date + " - Sourcecode.html": { "content": content },
-                     date + " - Logfile.text": { "content": log }
+                     date + " - Sourcecode.html": {"content": content},
+                     date + " - Logfile.text": {"content": log}
                     }
         })
         res = urllib2.urlopen('https://api.github.com/gists', d).read()
@@ -76,7 +78,7 @@ class selTest(unittest.TestCase):
         url = cls.getConfig('Imgur')['url']
         apikey = cls.getConfig('Imgur')['apikey']
 
-        data = urllib.urlencode({ 'key' : apikey, 'image' : picture })
+        data = urllib.urlencode({'key' : apikey, 'image' : picture})
         req = urllib2.Request(url, data)
         req.add_header('Authorization', 'Client-ID ' + clientId)
         json_response = urllib2.urlopen(req)
@@ -123,11 +125,11 @@ class selTest(unittest.TestCase):
                 return func(cls.driver)
             except TimeoutException:
                 raise ElementNotFound(css)
+
         else:
             func = lambda driver: driver.find_element_by_css_selector(css)
             WebDriverWait(cls.driver, wait).until(func, css)
             return func(cls.driver)
-
     @classmethod
     def waitXpath(cls, xpath, wait=10, raiseException=True):
         if raiseException:
@@ -152,7 +154,8 @@ class selTest(unittest.TestCase):
 
     @classmethod
     def shutdown_selenium_server_standalone(cls):
-        os.killpg(cls.pSel_server.pid, signal.SIGTERM)
+        if hasattr(cls, 'pSel_server'):
+            os.killpg(cls.pSel_server.pid, signal.SIGTERM)
 
     @classmethod
     def start_adhocracy(cls):
@@ -162,7 +165,9 @@ class selTest(unittest.TestCase):
         if errors:
             raise Exception("\n".join(errors))
 
-        cls.pAdhocracy_server = subprocess.Popen(cls.adhocracy_dir + 'bin/adhocracy_interactive.sh', stderr=cls.adhocracy_logfile, stdout=cls.adhocracy_logfile, shell=True, preexec_fn=os.setsid)
+        cmd = cls.adhocracy_dir + os.path.join('bin', 'adhocracy_interactive.sh')
+
+        cls.pAdhocracy_server = subprocess.Popen(cmd, stderr=cls.adhocracy_logfile, stdout=cls.adhocracy_logfile, preexec_fn=os.setsid)
 
         errors = check_port_free([5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
         if errors:
@@ -170,18 +175,24 @@ class selTest(unittest.TestCase):
 
     @classmethod
     def shutdown_adhocracy(cls):
-        os.killpg(cls.pAdhocracy_server.pid, signal.SIGTERM)
+        if hasattr(cls, 'pSel_server'):
+            os.killpg(cls.pAdhocracy_server.pid, signal.SIGTERM)
+            return True
+        return False
 
     #### database-isolation functions
     @classmethod
     def _database_backup_create(cls):
         # Database isolation - trivial - copy database to some other destination
-        shutil.copyfile(os.path.join(cls.adhocracy_dir, 'var', 'development.db'), os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'bak_db', 'adhocracy_backup.db'))
+        shutil.copyfile(os.path.join(cls.adhocracy_dir, 'var', 'development.db'),
+                        os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'bak_db', 'adhocracy_backup.db'))
 
     @classmethod
     def _database_backup_restore(cls):
         # Database isolation - trivial - restore our saved database
-        shutil.copyfile(os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'bak_db', 'adhocracy_backup.db'), os.path.join(cls.adhocracy_dir, 'var', 'development.db'))
+
+        shutil.copyfile(os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'bak_db', 'adhocracy_backup.db'),
+                        os.path.join(cls.adhocracy_dir, 'var', 'development.db'))
 
     #### xvfb and video-record functions
     @classmethod
@@ -196,37 +207,60 @@ class selTest(unittest.TestCase):
             display_number += 1
             if not os.path.isfile('/tmp/.X' + str(display_number) + '-lock'):
                 break
-        cls.pXvfb = subprocess.Popen(['Xvfb', ':' + str(display_number), '-ac', '-screen', '0', '1024x768x16'], stderr=null, stdout=null)
+
+        cmd = ['Xvfb', 
+               ':' + str(display_number), 
+               '-ac', 
+               '-screen', 
+               '0', 
+               '1024x768x16']
+
+        cls.pXvfb = subprocess.Popen(cmd, stderr=null, stdout=null)
 
         # make a backup of the old DISPLAY-var
-        cls.old_display = os.environ["DISPLAY"]
+        cls.old_display = os.environ.get('DISPLAY', '0')
         cls.new_display = str(display_number)
 
         os.environ["DISPLAY"] = ":" + str(display_number)
 
     @classmethod
     def _remove_xvfb_display(cls):
-        cls.pXvfb.kill()
-        # restore the old DISPLAY-var
-        os.environ["DISPLAY"] = cls.old_display
+        if hasattr(cls, 'pXvfb'):
+            cls.pXvfb.kill()
+            # restore the old DISPLAY-var
+            os.environ["DISPLAY"] = cls.old_display
 
     @classmethod
     def _create_video(cls):
         # to get a better quality, decrease the qmax parameter
 
-        null = open('/dev/null', 'wb')
+        nullout = open('/dev/null', 'wb')
+        nullin = open('/dev/null', 'rb')
 
         creationTime = int(time.time())
         cls.video_path = '/tmp/seleniumTest_' + str(creationTime) + '.mpg'
-        cls.pFfmpeg = subprocess.Popen(['ffmpeg', '-f', 'x11grab', '-r', '25', '-s', '1024x768', '-qmax', '10', '-i', ':' + cls.new_display + '.0', cls.video_path], stderr=null, stdout=null)
+        cmd = ['ffmpeg', 
+               '-f', 'x11grab', 
+               '-r', '25', 
+               '-s', '1024x768',
+               '-i', ':' + cls.new_display + '.0', 
+               '-qmax', '10', 
+               cls.video_path]
 
+        cls.pFfmpeg = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=nullout, stdin = nullin)
     @classmethod
     def _stop_video(cls):
-        cls.pFfmpeg.kill()
+        if hasattr(cls, 'pFfmpeg'):
+            cls.pFfmpeg.kill()
+            return True
+        else:
+            return False
 
     #### global setUpClass and tearDownClass, + setUp, tearDown for each function
     @classmethod
     def setUpClass(cls):
+        signal.signal(signal.SIGINT, cls.cleanup)
+        signal.signal(signal.SIGTERM, cls.cleanup)
         # with Python < 2.7 setUpClass() will not be executed, so this var will not be set to true
         # each test checks if this var has been set to true
         cls.setup_done = True
@@ -262,10 +296,7 @@ class selTest(unittest.TestCase):
         cls.envCreateVideo = os.environ.get('selCreateVideo', '') == '1'
 
         # selected browser
-        try:
-            cls.envSelectedBrowser = os.environ['selBrowser']
-        except KeyError:
-            cls.envSelectedBrowser = 'chrome'
+        cls.envSelectedBrowser = os.environ.get('selBrowser', 'chrome')
 
         # javascript
         cls.envDisableJs = os.environ.get('selDisableJS', '') == '1'
@@ -312,7 +343,8 @@ class selTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.driver.close()
+        if hasattr(cls, 'driver'):
+            cls.driver.close()
 
         # htmlunit needs a selenium server. If HU has been used, shutdown the server now
         if cls.envSelectedBrowser == 'htmlunit':
@@ -320,8 +352,8 @@ class selTest(unittest.TestCase):
 
         # if we have started the adhocracy server, we are going to shut it down now
         if cls.envStartAdh:
-            cls.shutdown_adhocracy()
-            cls._database_backup_restore()
+            if cls.shutdown_adhocracy():
+                cls._database_backup_restore()
 
         # check if Xvfb has been used, if so, kill the process
         if not cls.envShowTests:
@@ -329,18 +361,18 @@ class selTest(unittest.TestCase):
 
         # if we've recorded a video, we'll stop the recording now
         if cls.envCreateVideo:
-            cls._stop_video()
-            print('  > Video record available: ' + cls.video_path)
+            if cls._stop_video():
+                print('  > Video record: ' + cls.video_path)
 
-            # now check if the user wants the video to be uploaded on youtube
-            envYoutubeUpload = os.environ.get('envYoutubeUpload', '') == '1'
-            if envYoutubeUpload:
-                print('  > Uploading video, please wait...')
-                desc = 'Selenium driven test using ' + cls.envSelectedBrowser
-                title = 'Selenium ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                # now check if the user wants the video to be uploaded on youtube
+                envYoutubeUpload = os.environ.get('envYoutubeUpload', '') == '1'
+                if envYoutubeUpload:
+                    print('  > Uploading video, please wait...')
+                    desc = 'Selenium driven test using ' + cls.envSelectedBrowser
+                    title = 'Selenium ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                output = subprocess.Popen(['python', 'misc/youtube_upload.py', '--email=' + cls.getConfig('Youtube')['email'], '--password=' + cls.getConfig('Youtube')['password'], '--title="' + title + '"', '--description="' + desc + '"', '--category=Tech', '--keywords=Selenium', cls.video_path], stdout=subprocess.PIPE).communicate()[0]
-                print ('  > ' + output)
+                    output = subprocess.Popen(['python', 'misc/youtube_upload.py', '--email=' + cls.getConfig('Youtube')['email'], '--password=' + cls.getConfig('Youtube')['password'], '--title="' + title + '"', '--description="' + desc + '"', '--category=Tech', '--keywords=Selenium', cls.video_path], stdout=subprocess.PIPE).communicate()[0]
+                    print ('  > ' + output)
 
     def setUp(self):
         if not self.setup_done:
@@ -454,9 +486,9 @@ class selTest(unittest.TestCase):
             try:
                 dict1[option] = cls.Config.get(section, option)
                 if dict1[option] == -1:
-                    DebugPrint("skip: %s" % option)
+                    print('exception on %s!' % option)
             except:
-                print("exception on %s!" % option)
+                print('exception on %s!' % option)
                 dict1[option] = None
         return dict1
 
@@ -499,19 +531,22 @@ class selTest(unittest.TestCase):
               if not, we check if the user set the env. var. selUseFirefoxBin which will
               use the firefox binary specified in selenium.ini
             """
-            if cls.check_firefox_version():
-                # everything okay
-                cls.driver = webdriver.Firefox(firefox_profile=fp)
+
+            useFirefoxBin = os.environ.get('selUseFirefoxBin', '') == '1'
+
+            if useFirefoxBin:
+                firefoxBinary = os.path.join(cls.script_dir, cls.getConfig('Selenium')['firefox'])
+                ffbin = webdriver.firefox.firefox_binary.FirefoxBinary(firefoxBinary)
+                cls.driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=ffbin)
             else:
-                # check env. var
-                useFirefoxBin = os.environ.get('selUseFirefoxBin', '') == '1'
-                if not useFirefoxBin:   # TODO Logic wrong!!!
-                    ffbin = webdriver.firefox.firefox_binary.FirefoxBinary(cls.script_dir + '/' + cls.getConfig('Selenium')['firefox'])
-                    cls.driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=ffbin)
+                if cls.check_firefox_version():
+                    # everything okay
+                    cls.driver = webdriver.Firefox(firefox_profile=fp)
                 else:
                     # installed version of firefox not found or too old.
                     # user didn't set the env. var... we will stop here.
                     raise Exception('Installed firefox version not found or too old. You may use the env. var. "selUseFirefoxBin" to use a firefox binary specified in selenium.ini')
+
         elif browser == 'chrome':
             cls.driver = webdriver.Chrome(cls.script_dir + '/' + cls.getConfig('Selenium')['chrome'])
             # No javascript-disable support for chrome!
@@ -521,16 +556,15 @@ class selTest(unittest.TestCase):
     @classmethod
     def check_firefox_version(cls):
         # checks if firefox version is older than 3.6
-        try:
-            output = subprocess.Popen(['firefox', '--version'], stdout=subprocess.PIPE).communicate()[0]
-        except Exception as e:
-            return False
-        try:
-            major, minor = map(int, re.search(r"(\d+).(\d+)", output).groups())
-        except Exception as e:
-            return False
-        if (major, minor) < (3, 6):
-            return False
-        return True
+        output = subprocess.Popen(['firefox', '--version'], stdout=subprocess.PIPE).communicate()[0]
+        major, minor = map(int, re.search(r"(\d+).(\d+)", output).groups())
+        return (major, minor) >= (3, 6)
+
+    @classmethod
+    def cleanup(cls, signal, frame):
+        # will be called with SIGINT, SIGTErM
+        cls.tearDownClass()
+        sys.exit(0)
 if __name__ == '__main__':
     unittest.main()
+
