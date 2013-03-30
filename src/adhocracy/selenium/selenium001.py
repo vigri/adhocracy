@@ -19,6 +19,17 @@ import ConfigParser
 import signal
 import sys
 import time
+import inspect
+
+pth = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
+script_folder = os.path.join(pth, '..', '..', '..', 'scripts')
+misc_folder = os.path.join(pth, 'misc')
+
+if script_folder not in sys.path:
+    sys.path.insert(0, script_folder)
+
+if misc_folder not in sys.path:
+    sys.path.insert(0, misc_folder)
 
 from check_port_free import check_port_free
 from selenium import webdriver
@@ -26,7 +37,6 @@ from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.support.wait import WebDriverWait
 from ElementNotFound import ElementNotFound
 from selenium.common.exceptions import TimeoutException
-
 
 
 class selTest(unittest.TestCase):
@@ -63,9 +73,8 @@ class selTest(unittest.TestCase):
             "description": desc,
             "public": False,
             "files": {
-                     date + " - Sourcecode.html": {"content": content},
-                     date + " - Logfile.text": {"content": log}
-                    }
+                    date + " - Sourcecode.html": {"content": content},
+                    date + " - Logfile.text": {"content": log}}
         })
         res = urllib2.urlopen('https://api.github.com/gists', d).read()
         resd = json.loads(res)
@@ -78,7 +87,7 @@ class selTest(unittest.TestCase):
         url = cls.getConfig('Imgur')['url']
         apikey = cls.getConfig('Imgur')['apikey']
 
-        data = urllib.urlencode({'key' : apikey, 'image' : picture})
+        data = urllib.urlencode({'key': apikey, 'image': picture})
         req = urllib2.Request(url, data)
         req.add_header('Authorization', 'Client-ID ' + clientId)
         json_response = urllib2.urlopen(req)
@@ -97,11 +106,15 @@ class selTest(unittest.TestCase):
             log = 'No logfile available. Existing adhocracy server was used'
         else:
             cls.adhocracy_logfile.flush()
-            log = open('logfile', 'r').read()
+            log = open(os.path.join('log', 'adhocracy'), 'r').read()
             if log == "":
                 log = 'Error reading logfile'
 
-        url = cls.gist_upload('Selenium driven test (' + cls.envSelectedBrowser + ')\n' + dt + '\n%r' % e + ']', cls.driver.page_source, log, dt)
+        url = cls.gist_upload(
+                            'Selenium driven test (' + cls.envSelectedBrowser + ')\n' + dt + '\n%r' % e + ']',
+                            cls.driver.page_source,
+                            log,
+                            dt)
         print('\n  > Exception: %r' % e)
         print('  > Browser: ' + cls.envSelectedBrowser)
         print('  > Logfile and HTML sourcecode: ' + url)
@@ -130,6 +143,7 @@ class selTest(unittest.TestCase):
             func = lambda driver: driver.find_element_by_css_selector(css)
             WebDriverWait(cls.driver, wait).until(func, css)
             return func(cls.driver)
+
     @classmethod
     def waitXpath(cls, xpath, wait=10, raiseException=True):
         if raiseException:
@@ -148,37 +162,68 @@ class selTest(unittest.TestCase):
     @classmethod
     def start_selenium_server_standalone(cls):
         null = open('/dev/null', 'wb')
-        server_path = cls.script_dir + '/' + cls.getConfig('Selenium')['server']
+        server_path = os.path.join(cls.script_dir, cls.getConfig('Selenium')['server'])
         cmd = ['java', '-Djava.security.egd=file:/dev/./urandom', '-jar', server_path]
-        cls.pSel_server = subprocess.Popen(cmd, stderr=null, stdout=null, preexec_fn=os.setsid)
+        cls.pSel_server = subprocess.Popen(cmd,
+                                           stderr=null,
+                                           stdout=null,
+                                           preexec_fn=os.setsid)
+
+        # Write PID file
+        pidfilename = '/tmp/selenium_' + str(cls.pSel_server.pid) + '.pid'
+        pidfile = open(pidfilename, 'w')
+        pidfile.write(str(cls.pSel_server.pid))
+        pidfile.close()
 
     @classmethod
     def shutdown_selenium_server_standalone(cls):
         if hasattr(cls, 'pSel_server'):
+            pidfilename = '/tmp/selenium_' + str(cls.pSel_server.pid) + '.pid'
+
             os.killpg(cls.pSel_server.pid, signal.SIGTERM)
+
+            # remove pidfile
+            if os.path.isfile(pidfilename):
+                os.remove(pidfilename)
 
     @classmethod
     def start_adhocracy(cls):
-        cls.adhocracy_logfile = open('logfile', 'w')
-        
+        cls.adhocracy_logfile = open(os.path.join('log', 'adhocracy'), 'w+')
+
         errors = check_port_free([5001], opts_kill='pgid', opts_gracePeriod=10)
         if errors:
             raise Exception("\n".join(errors))
 
         cmd = cls.adhocracy_dir + os.path.join('bin', 'adhocracy_interactive.sh')
 
-        cls.pAdhocracy_server = subprocess.Popen(cmd, stderr=cls.adhocracy_logfile, stdout=cls.adhocracy_logfile, preexec_fn=os.setsid)
+        cls.pAdhocracy_server = subprocess.Popen(cmd,
+                                                 stderr=cls.adhocracy_logfile,
+                                                 stdout=cls.adhocracy_logfile,
+                                                 preexec_fn=os.setsid)
 
         errors = check_port_free([5001], opts_gracePeriod=30, opts_graceInterval=0.1, opts_open=True)
         if errors:
             raise Exception("\n".join(errors))
 
+        # Write PID file
+        pidfilename = '/tmp/selenium_' + str(cls.pAdhocracy_server.pid) + '.pid'
+        pidfile = open(pidfilename, 'w')
+        pidfile.write(str(cls.pAdhocracy_server.pid))
+        pidfile.close()
+
     @classmethod
     def shutdown_adhocracy(cls):
-        if hasattr(cls, 'pSel_server'):
+        if hasattr(cls, 'pAdhocracy_server'):
+            pidfilename = '/tmp/selenium_' + str(cls.pAdhocracy_server.pid) + '.pid'
+
             os.killpg(cls.pAdhocracy_server.pid, signal.SIGTERM)
+
+            # remove pidfile
+            if os.path.isfile(pidfilename):
+                os.remove(pidfilename)
             return True
-        return False
+        else:
+            return False
 
     #### database-isolation functions
     @classmethod
@@ -190,7 +235,6 @@ class selTest(unittest.TestCase):
     @classmethod
     def _database_backup_restore(cls):
         # Database isolation - trivial - restore our saved database
-
         shutil.copyfile(os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'bak_db', 'adhocracy_backup.db'),
                         os.path.join(cls.adhocracy_dir, 'var', 'development.db'))
 
@@ -208,11 +252,11 @@ class selTest(unittest.TestCase):
             if not os.path.isfile('/tmp/.X' + str(display_number) + '-lock'):
                 break
 
-        cmd = ['Xvfb', 
-               ':' + str(display_number), 
-               '-ac', 
-               '-screen', 
-               '0', 
+        cmd = ['Xvfb',
+               ':' + str(display_number),
+               '-ac',
+               '-screen',
+               '0',
                '1024x768x16']
 
         cls.pXvfb = subprocess.Popen(cmd, stderr=null, stdout=null)
@@ -223,12 +267,24 @@ class selTest(unittest.TestCase):
 
         os.environ["DISPLAY"] = ":" + str(display_number)
 
+        # Write PID file
+        pidfilename = '/tmp/selenium_' + str(cls.pXvfb.pid) + '.pid'
+        pidfile = open(pidfilename, 'w')
+        pidfile.write(str(cls.pXvfb.pid))
+        pidfile.close()
+
     @classmethod
     def _remove_xvfb_display(cls):
         if hasattr(cls, 'pXvfb'):
+            pidfilename = '/tmp/selenium_' + str(cls.pXvfb.pid) + '.pid'
+
             cls.pXvfb.kill()
             # restore the old DISPLAY-var
             os.environ["DISPLAY"] = cls.old_display
+
+            # remove pid file
+            if os.path.isfile(pidfilename):
+                os.remove(pidfilename)
 
     @classmethod
     def _create_video(cls):
@@ -239,19 +295,36 @@ class selTest(unittest.TestCase):
 
         creationTime = int(time.time())
         cls.video_path = '/tmp/seleniumTest_' + str(creationTime) + '.mpg'
-        cmd = ['ffmpeg', 
-               '-f', 'x11grab', 
-               '-r', '25', 
+        cmd = ['ffmpeg',
+               '-f', 'x11grab',
+               '-r', '25',
                '-s', '1024x768',
-               '-i', ':' + cls.new_display + '.0', 
-               '-qmax', '10', 
+               '-i', ':' + cls.new_display + '.0',
+               '-qmax', '10',
                cls.video_path]
 
-        cls.pFfmpeg = subprocess.Popen(cmd, stderr=subprocess.STDOUT, stdout=nullout, stdin = nullin)
+        cls.pFfmpeg = subprocess.Popen(cmd,
+                                       stderr=subprocess.STDOUT,
+                                       stdout=nullout,
+                                       stdin=nullin)
+
+        # Write PID file
+        pidfilename = '/tmp/selenium_' + str(cls.pFfmpeg.pid) + '.pid'
+        pidfile = open(pidfilename, 'w')
+        pidfile.write(str(cls.pFfmpeg.pid))
+        pidfile.close()
+
     @classmethod
     def _stop_video(cls):
         if hasattr(cls, 'pFfmpeg'):
+            pidfilename = '/tmp/selenium_' + str(cls.pFfmpeg.pid) + '.pid'
+
             cls.pFfmpeg.kill()
+
+            # remove pid file
+            if os.path.isfile(pidfilename):
+                os.remove(pidfilename)
+
             return True
         else:
             return False
@@ -371,7 +444,14 @@ class selTest(unittest.TestCase):
                     desc = 'Selenium driven test using ' + cls.envSelectedBrowser
                     title = 'Selenium ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-                    output = subprocess.Popen(['python', 'misc/youtube_upload.py', '--email=' + cls.getConfig('Youtube')['email'], '--password=' + cls.getConfig('Youtube')['password'], '--title="' + title + '"', '--description="' + desc + '"', '--category=Tech', '--keywords=Selenium', cls.video_path], stdout=subprocess.PIPE).communicate()[0]
+                    output = subprocess.Popen(['python', 'misc/youtube_upload.py',
+                                               '--email=' + cls.getConfig('Youtube')['email'],
+                                               '--password=' + cls.getConfig('Youtube')['password'],
+                                               '--title="' + title + '"', '--description="' + desc + '"',
+                                               '--category=Tech',
+                                               '--keywords=Selenium',
+                                               cls.video_path],
+                                              stdout=subprocess.PIPE).communicate()[0]
                     print ('  > ' + output)
 
     def setUp(self):
@@ -389,17 +469,17 @@ class selTest(unittest.TestCase):
         i_username = cls.waitCSS('form[name="create_user"] input[name="user_name"]')
         i_username.send_keys(userName)
 
-        i_email = cls.waitCSS('form[name="create_user"] input[name="email"]')
-        i_email.send_keys(userName + '@example.com')
+        email = cls.waitCSS('form[name="create_user"] input[name="email"]')
+        email.send_keys(userName + '@example.com')
 
-        i_password = cls.waitCSS('form[name="create_user"] input[name="password"]')
-        i_password.send_keys('test')
+        pwd = cls.waitCSS('form[name="create_user"] input[name="password"]')
+        pwd.send_keys('test')
 
-        i_password2 = cls.waitCSS('form[name="create_user"] input[name="password_confirm"]')
-        i_password2.send_keys('test')
+        pwd2 = cls.waitCSS('form[name="create_user"] input[name="password_confirm"]')
+        pwd2.send_keys('test')
 
-        b_submit = cls.waitCSS('form[name="create_user"] input[type="submit"]')
-        b_submit.click()
+        submit = cls.waitCSS('form[name="create_user"] input[type="submit"]')
+        submit.click()
 
         cls.waitCSS('#user_menu')
         cls.force_logout()
@@ -440,15 +520,23 @@ class selTest(unittest.TestCase):
                 cls.force_logout()
 
                 if login_as_admin:
-                    cls.adhocracy_login = {'username': cls.adhocracy_login_admin['username'], 'password': cls.adhocracy_login_admin['password'], 'admin': True}
+                    cls.adhocracy_login = {'username': cls.adhocracy_login_admin['username'],
+                                           'password': cls.adhocracy_login_admin['password'],
+                                           'admin': True}
                 else:
-                    cls.adhocracy_login = {'username': cls.adhocracy_login_user['username'], 'password': cls.adhocracy_login_user['password'], 'admin': False}
+                    cls.adhocracy_login = {'username': cls.adhocracy_login_user['username'],
+                                           'password': cls.adhocracy_login_user['password'],
+                                           'admin': False}
                 cls._login_user()
         else:
             if login_as_admin:
-                cls.adhocracy_login = {'username': cls.adhocracy_login_admin['username'], 'password': cls.adhocracy_login_admin['password'], 'admin': True}
+                cls.adhocracy_login = {'username': cls.adhocracy_login_admin['username'],
+                                       'password': cls.adhocracy_login_admin['password'],
+                                       'admin': True}
             else:
-                cls.adhocracy_login = {'username': cls.adhocracy_login_user['username'], 'password': cls.adhocracy_login_user['password'], 'admin': False}
+                cls.adhocracy_login = {'username': cls.adhocracy_login_user['username'],
+                                       'password': cls.adhocracy_login_user['password'],
+                                       'admin': False}
             cls._login_user()
 
     @classmethod
@@ -471,7 +559,7 @@ class selTest(unittest.TestCase):
     def make_element_visible_by_id(self, elementId):
         self.execute_js('document.getElementById("' + elementId + '").style.display = "block";')
 
-    def execute_js(self,js):
+    def execute_js(self, js):
         try:
             return self.driver.execute_script(js)
         except Exception:
@@ -518,7 +606,7 @@ class selTest(unittest.TestCase):
             else:
                 desired_caps['javascriptEnabled'] = 'True'
 
-            cls.driver = webdriver.Remote(command_executor = 'http://127.0.0.1:4444/wd/hub', desired_capabilities = desired_caps)
+            cls.driver = webdriver.Remote(command_executor='http://127.0.0.1:4444/wd/hub', desired_capabilities=desired_caps)
         elif browser == 'firefox':
             fp = webdriver.FirefoxProfile()
 
@@ -548,7 +636,9 @@ class selTest(unittest.TestCase):
                     raise Exception('Installed firefox version not found or too old. You may use the env. var. "selUseFirefoxBin" to use a firefox binary specified in selenium.ini')
 
         elif browser == 'chrome':
-            cls.driver = webdriver.Chrome(cls.script_dir + '/' + cls.getConfig('Selenium')['chrome'])
+            cls.driver = webdriver.Chrome(
+                                        os.path.join(cls.script_dir, cls.getConfig('Selenium')['chrome']),
+                                        service_log_path=os.path.join('log', 'chromedriver'))
             # No javascript-disable support for chrome!
         else:
             raise Exception('Invalid browser selected: ' + browser)
@@ -556,7 +646,9 @@ class selTest(unittest.TestCase):
     @classmethod
     def check_firefox_version(cls):
         # checks if firefox version is older than 3.6
-        output = subprocess.Popen(['firefox', '--version'], stdout=subprocess.PIPE).communicate()[0]
+        output = subprocess.Popen(['firefox', '--version'],
+                                  stdout=subprocess.PIPE
+                                  ).communicate()[0]
         major, minor = map(int, re.search(r"(\d+).(\d+)", output).groups())
         return (major, minor) >= (3, 6)
 
@@ -567,4 +659,3 @@ class selTest(unittest.TestCase):
         sys.exit(0)
 if __name__ == '__main__':
     unittest.main()
-

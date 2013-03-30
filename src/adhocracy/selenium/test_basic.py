@@ -56,25 +56,25 @@ class Test_basic(selTest):
         self.ensure_login(login_as_admin=True)
         self.loadPage("/instance/new")
 
-        i_label = self.waitCSS('form[name="create_instance"] input[name="label"]')
-        i_label.send_keys(instanceName)
+        label = self.waitCSS('form[name="create_instance"] input[name="label"]')
+        label.send_keys(instanceName)
 
-        i_key = self.waitCSS('form[name="create_instance"] input[name="key"]')
-        i_key.send_keys(instanceKey)
+        key = self.waitCSS('form[name="create_instance"] input[name="key"]')
+        key.send_keys(instanceKey)
 
-        t_description = self.waitCSS('form[name="create_instance"] textarea[name="description"]')
-        t_description.send_keys(instanceDescription)
+        description = self.waitCSS('form[name="create_instance"] textarea[name="description"]')
+        description.send_keys(instanceDescription)
 
-        b_submit = self.waitCSS('form[name="create_instance"] button[type="submit"]')
-        b_submit.click()
+        submit = self.waitCSS('form[name="create_instance"] button[type="submit"]')
+        submit.click()
 
         self.waitXpath("//h2[contains(text(), '" + instanceName + "')]")
         #require_valid_email
-        c_email_verification = self.waitCSS('form[name="create_instance"] input[name="require_valid_email"]')
-        c_email_verification.click()
+        email_verification = self.waitCSS('form[name="create_instance"] input[name="require_valid_email"]')
+        email_verification.click()
 
-        b_submit2 = self.waitCSS('form[name="create_instance"] button[type="submit"]')
-        b_submit2.click()
+        submit2 = self.waitCSS('form[name="create_instance"] button[type="submit"]')
+        submit2.click()
 
         self.waitCSS('form[name="create_instance"] div.alert.alert-success')
 
@@ -87,26 +87,26 @@ class Test_basic(selTest):
         self.ensure_login()
         self.loadPage()
 
-        l_instances = self.waitCSS('#nav_instances > a')
-        l_instances.click()
+        instances = self.waitCSS('#nav_instances > a')
+        instances.click()
 
         # Temp. Display bug in adhocracy!!
         self.loadPage("/instance?instances_page=1&instances_size=100&instances_sort=-activity")
 
-        l_test_instance = self.waitXpath("//div[@id='instance_table']//h3/a[contains(text(), '" + instanceName + "')]")
-        l_test_instance.click()
+        test_instance = self.waitXpath("//div[@id='instance_table']//h3/a[contains(text(), '" + instanceName + "')]")
+        test_instance.click()
 
-        l_proposals = self.waitCSS('#subnav-proposals > a')
+        proposals = self.waitCSS('#subnav-proposals > a')
 
         self.ensure_is_member_of_group()
 
-        l_proposals = self.waitCSS('#subnav-proposals > a')
-        l_proposals.click()
+        proposals = self.waitCSS('#subnav-proposals > a')
+        proposals.click()
 
-        l_new_proposal = self.waitCSS('#new-proposal > a')
-        l_new_proposal.click()
+        new_proposal = self.waitCSS('#new-proposal > a')
+        new_proposal.click()
 
-        i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
+        label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
 
     @selTest.additionalInfoOnException
     def test_create_proposal(self):
@@ -124,23 +124,23 @@ class Test_basic(selTest):
 
         self.ensure_is_member_of_group()
 
-        l_proposals = self.waitCSS('#subnav-proposals > a')
-        l_proposals.click()
+        proposals = self.waitCSS('#subnav-proposals > a')
+        proposals.click()
 
-        l_new_proposal = self.waitCSS('#new-proposal > a')
-        l_new_proposal.click()
+        new_proposal = self.waitCSS('#new-proposal > a')
+        new_proposal.click()
 
-        i_label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
-        i_label.send_keys(proposalName)
+        label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
+        label.send_keys(proposalName)
 
-        i_tags = self.waitCSS('form[name="create_proposal"] input[name="tag"]')
-        i_tags.send_keys(proposalTags)
+        tags = self.waitCSS('form[name="create_proposal"] input[name="tag"]')
+        tags.send_keys(proposalTags)
 
-        t_description = self.waitCSS('form[name="create_proposal"] textarea[name="text"]')
-        t_description.send_keys(proposalDescription)
+        description = self.waitCSS('form[name="create_proposal"] textarea[name="text"]')
+        description.send_keys(proposalDescription)
 
-        b_submit = self.waitCSS('form[name="create_proposal"] button[type="submit"]')
-        b_submit.click()
+        submit = self.waitCSS('form[name="create_proposal"] button[type="submit"]')
+        submit.click()
 
         self.waitCSS('#discussions')
 
@@ -156,26 +156,26 @@ class Test_basic(selTest):
         self.force_logout()
         self.loadPage()
 
-        l_login = self.waitCSS('#nav_login > a')
-        l_login.click()
+        login = self.waitCSS('#nav_login > a')
+        login.click()
 
-        b_register = self.waitCSS('form[name="login"] a')
-        b_register.click()
+        register = self.waitCSS('form[name="login"] a')
+        register.click()
 
-        i_username = self.waitCSS('form[name="create_user"] input[name="user_name"]')
-        i_username.send_keys(userName)
+        username = self.waitCSS('form[name="create_user"] input[name="user_name"]')
+        username.send_keys(userName)
 
-        i_email = self.waitCSS('form[name="create_user"] input[name="email"]')
-        i_email.send_keys(userName + "@example.com")
+        email = self.waitCSS('form[name="create_user"] input[name="email"]')
+        email.send_keys(userName + "@example.com")
 
-        i_password = self.waitCSS('form[name="create_user"] input[name="password"]')
-        i_password.send_keys("test")
+        password = self.waitCSS('form[name="create_user"] input[name="password"]')
+        password.send_keys("test")
 
-        i_password2 = self.waitCSS('form[name="create_user"] input[name="password_confirm"]')
-        i_password2.send_keys("test")
+        password2 = self.waitCSS('form[name="create_user"] input[name="password_confirm"]')
+        password2.send_keys("test")
 
-        b_submit = self.waitCSS('form[name="create_user"] input[type="submit"]')
-        b_submit.click()
+        submit = self.waitCSS('form[name="create_user"] input[type="submit"]')
+        submit.click()
 
         self.waitCSS('#user_menu')
         self.force_logout()
@@ -189,30 +189,30 @@ class Test_basic(selTest):
 
         self.ensure_is_member_of_group()
 
-        l_proposals = self.waitCSS('#subnav-proposals > a')
-        l_proposals.click()
+        proposals = self.waitCSS('#subnav-proposals > a')
+        proposals.click()
 
         self.waitCSS('#proposal_list_header')
 
         # Get the first proposal which can be found
         try:
-            l_proposal = self.waitCSS('li.content_box h3 > a', raiseException=False)
+            proposal = self.waitCSS('li.content_box h3 > a', raiseException=False)
         except TimeoutException:
             raise Exception("No proposal has been found")
 
         # Due to "Element does not exist in cache"-error we need to save the name and cannot use l_proposal.text later
-        proposalName = l_proposal.text
-        l_proposal.click()
+        proposalName = proposal.text
+        proposal.click()
 
         # Click on the follow button
-        l_follow = self.waitCSS('a.follow_paper')
-        l_follow.click()
+        follow = self.waitCSS('a.follow_paper')
+        follow.click()
 
         # Now lets see if 'following' is active
         self.waitCSS('a.follow_paper.active')
 
-        l_watchlist = self.waitCSS('#nav_watchlist > a')
-        l_watchlist.click()
+        watchlist = self.waitCSS('#nav_watchlist > a')
+        watchlist.click()
 
         self.waitXpath("//h3//a[contains(text(), '" + proposalName + "')]")
 
@@ -227,15 +227,15 @@ class Test_basic(selTest):
         for x in range(0, 3):
             self.make_element_visible_by_id("new_toplevel_comment")
 
-            t_description = self.waitCSS('form[name="new_comment"] textarea[name="text"]')
-            t_description.send_keys("Test comment " + str(x + 1))
+            description = self.waitCSS('form[name="new_comment"] textarea[name="text"]')
+            description.send_keys("Test comment " + str(x + 1))
 
-            b_submit = self.waitCSS('form[name="new_comment"] input[type="submit"]')
-            b_submit.click()
+            submit = self.waitCSS('form[name="new_comment"] input[type="submit"]')
+            submit.click()
 
             self.waitCSS('a[id="start-discussion-button"]')
 
-    #@selTest.jsRequired
+    @selTest.jsRequired
     @selTest.additionalInfoOnException
     def test_create_feedback(self):
         # Since the feedback title must be unique, we are using the current timestamp and browser for naming
@@ -256,14 +256,14 @@ class Test_basic(selTest):
         if (form_position != "0px"):
             raise Exception("Element not visible")
 
-        i_title = self.waitCSS('form[name="create_feedback"] input[name="label"]')
-        i_title.send_keys(feedbackTitle)
+        title = self.waitCSS('form[name="create_feedback"] input[name="label"]')
+        title.send_keys(feedbackTitle)
 
-        t_description = self.waitCSS('form[name="create_feedback"] textarea[name="text"]')
-        t_description.send_keys(feedbackDescription)
+        description = self.waitCSS('form[name="create_feedback"] textarea[name="text"]')
+        description.send_keys(feedbackDescription)
 
-        b_submit = self.waitCSS('form[name="create_feedback"] button[type="submit"]')
-        b_submit.click()
+        submit = self.waitCSS('form[name="create_feedback"] button[type="submit"]')
+        submit.click()
 
         self.waitCSS('#discussions')
 
