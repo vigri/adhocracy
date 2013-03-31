@@ -419,6 +419,11 @@ class selTest(unittest.TestCase):
         # create webdriver based on selected browser
         cls._create_webdriver(browser=cls.envSelectedBrowser)
 
+        # check if adhocracy is online
+        if not cls.check_adhocracy_online():
+            cls.tearDownClass()
+            raise Exception('Adhocracy-Website not available.')
+
         cls._create_default_user()
 
     @classmethod
@@ -686,6 +691,17 @@ class selTest(unittest.TestCase):
                                   ).communicate()[0]
         major, minor = map(int, re.search(r"(\d+).(\d+)", output).groups())
         return (major, minor) >= (3, 6)
+
+    @classmethod
+    def check_adhocracy_online(cls):
+        try:
+            status =  urllib.urlopen(cls.adhocracyUrl).getcode()
+            if status == 200:
+                return True
+            else:
+                return False
+        except IOError:
+            return False
 
     @classmethod
     def cleanup(cls, signal, frame):
