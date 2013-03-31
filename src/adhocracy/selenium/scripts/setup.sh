@@ -21,6 +21,9 @@ fi
 
 rm *.deb
 
+# get to main dir
+cd ..
+
 mkdir -p res
 
 cd res
