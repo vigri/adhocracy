@@ -170,15 +170,15 @@ class selTest(unittest.TestCase):
                                            preexec_fn=os.setsid)
 
         # Write PID file
-        pidfilename = '/tmp/selenium_' + str(cls.pSel_server.pid) + '.pid'
-        pidfile = open(pidfilename, 'w')
+        pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.pSel_server.pid) + '.pid')
+        pidfile = open(pidfilename, 'wb')
         pidfile.write(str(cls.pSel_server.pid))
         pidfile.close()
 
     @classmethod
     def shutdown_selenium_server_standalone(cls):
         if hasattr(cls, 'pSel_server'):
-            pidfilename = '/tmp/selenium_' + str(cls.pSel_server.pid) + '.pid'
+            pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.pSel_server.pid) + '.pid')
 
             os.killpg(cls.pSel_server.pid, signal.SIGTERM)
 
@@ -206,15 +206,15 @@ class selTest(unittest.TestCase):
             raise Exception("\n".join(errors))
 
         # Write PID file
-        pidfilename = '/tmp/selenium_' + str(cls.pAdhocracy_server.pid) + '.pid'
-        pidfile = open(pidfilename, 'w')
+        pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pAdhocracy_server.pid) + '.pid')
+        pidfile = open(pidfilename, 'wb')
         pidfile.write(str(cls.pAdhocracy_server.pid))
         pidfile.close()
 
     @classmethod
     def shutdown_adhocracy(cls):
         if hasattr(cls, 'pAdhocracy_server'):
-            pidfilename = '/tmp/selenium_' + str(cls.pAdhocracy_server.pid) + '.pid'
+            pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pAdhocracy_server.pid) + '.pid')
 
             os.killpg(cls.pAdhocracy_server.pid, signal.SIGTERM)
 
@@ -229,14 +229,19 @@ class selTest(unittest.TestCase):
     @classmethod
     def _database_backup_create(cls):
         # Database isolation - trivial - copy database to some other destination
-        shutil.copyfile(os.path.join(cls.adhocracy_dir, 'var', 'development.db'),
-                        os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'bak_db', 'adhocracy_backup.db'))
+        backup = os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'tmp', 'adhocracy_backup.db')
+        db = os.path.join(cls.adhocracy_dir, 'var', 'development.db')
+        shutil.copyfile(db, backup)
 
     @classmethod
     def _database_backup_restore(cls):
         # Database isolation - trivial - restore our saved database
-        shutil.copyfile(os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'bak_db', 'adhocracy_backup.db'),
-                        os.path.join(cls.adhocracy_dir, 'var', 'development.db'))
+        backup = os.path.join(cls.adhocracy_dir, 'src', 'adhocracy', 'selenium', 'tmp', 'adhocracy_backup.db')
+        db = os.path.join(cls.adhocracy_dir, 'var', 'development.db')
+        shutil.copyfile(backup, db)
+
+        #now we'll remove the backup file
+        os.remove(backup)
 
     #### xvfb and video-record functions
     @classmethod
@@ -268,15 +273,15 @@ class selTest(unittest.TestCase):
         os.environ["DISPLAY"] = ":" + str(display_number)
 
         # Write PID file
-        pidfilename = '/tmp/selenium_' + str(cls.pXvfb.pid) + '.pid'
-        pidfile = open(pidfilename, 'w')
+        pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pXvfb.pid) + '.pid')
+        pidfile = open(pidfilename, 'wb')
         pidfile.write(str(cls.pXvfb.pid))
         pidfile.close()
 
     @classmethod
     def _remove_xvfb_display(cls):
         if hasattr(cls, 'pXvfb'):
-            pidfilename = '/tmp/selenium_' + str(cls.pXvfb.pid) + '.pid'
+            pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pXvfb.pid) + '.pid')
 
             cls.pXvfb.kill()
             # restore the old DISPLAY-var
@@ -309,15 +314,15 @@ class selTest(unittest.TestCase):
                                        stdin=nullin)
 
         # Write PID file
-        pidfilename = '/tmp/selenium_' + str(cls.pFfmpeg.pid) + '.pid'
-        pidfile = open(pidfilename, 'w')
+        pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pFfmpeg.pid) + '.pid')
+        pidfile = open(pidfilename, 'wb')
         pidfile.write(str(cls.pFfmpeg.pid))
         pidfile.close()
 
     @classmethod
     def _stop_video(cls):
         if hasattr(cls, 'pFfmpeg'):
-            pidfilename = '/tmp/selenium_' + str(cls.pFfmpeg.pid) + '.pid'
+            pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pFfmpeg.pid) + '.pid')
 
             cls.pFfmpeg.kill()
 
@@ -332,8 +337,10 @@ class selTest(unittest.TestCase):
     #### global setUpClass and tearDownClass, + setUp, tearDown for each function
     @classmethod
     def setUpClass(cls):
+        # Signal handlers
         signal.signal(signal.SIGINT, cls.cleanup)
         signal.signal(signal.SIGTERM, cls.cleanup)
+
         # with Python < 2.7 setUpClass() will not be executed, so this var will not be set to true
         # each test checks if this var has been set to true
         cls.setup_done = True
@@ -351,7 +358,7 @@ class selTest(unittest.TestCase):
         cls.login_cookie = ''
         cls.adhocracy_logfile = None
         cls.adhocracy_dir = cls.getConfig('Adhocracy')['dir']
-
+        cls.pidfolder = os.path.join(cls.script_dir, 'tmp')
         # Login / password for admin and non-user
         cls.adhocracy_login_admin = {'username': 'admin', 'password': 'password'}
         cls.adhocracy_login_user = {'username': '', 'password': ''}    # will be filled out by _create_default_user
@@ -657,5 +664,6 @@ class selTest(unittest.TestCase):
         # will be called with SIGINT, SIGTErM
         cls.tearDownClass()
         sys.exit(0)
+
 if __name__ == '__main__':
     unittest.main()

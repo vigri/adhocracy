@@ -1,4 +1,5 @@
-res/
-bak_db/
-log/
+res/*
+bak_db/*
+log/*
+tmp/*
 
