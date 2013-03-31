@@ -662,35 +662,53 @@ class selTest(unittest.TestCase):
                     # user didn't set the env. var... we will stop here.
                     cls.tearDownClass()
                     raise Exception('Installed firefox version not found or too old. You may use the env. var. "selUseFirefoxBin" to use a firefox binary specified in selenium.ini')
-                    sys.exit(0)
 
         elif browser == 'chrome':
-            cls.driver = webdriver.Chrome(
-                                        os.path.join(cls.script_dir, cls.getConfig('Selenium')['chrome']),
-                                        service_log_path=os.path.join('log', 'chromedriver'))
+            if cls.check_chrome_version():
+                cls.driver = webdriver.Chrome(
+                                            os.path.join(cls.script_dir, cls.getConfig('Selenium')['chrome']),
+                                            service_log_path=os.path.join('log', 'chromedriver'))
+                # since chromedriver will not be closed even if we call cls.driver.close()
+                # we need to store the PID of chromedriver and kill it inside tearDownClass()
+                cls.chromedriverPid = cls.driver.service.process.pid
 
-            # since chromedriver will not be closed even if we call cls.driver.close()
-            # we need to store the PID of chromedriver and kill it inside tearDownClass()
-            cls.chromedriverPid = cls.driver.service.process.pid
+                # Write PID file
+                pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.chromedriverPid) + '.pid')
+                pidfile = open(pidfilename, 'wb')
+                pidfile.write(str(cls.chromedriverPid))
+                pidfile.close()
 
-            # Write PID file
-            pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.chromedriverPid) + '.pid')
-            pidfile = open(pidfilename, 'wb')
-            pidfile.write(str(cls.chromedriverPid))
-            pidfile.close()
-
-            # No javascript-disable support for chrome!
+                # No javascript-disable support for chrome!
+            else:
+                cls.tearDownClass()
+                raise Exception('Google-Chrome not found or too old. Please install Google-Chrome >= 24.0')
         else:
             raise Exception('Invalid browser selected: ' + browser)
 
     @classmethod
     def check_firefox_version(cls):
         # checks if firefox version is older than 3.6
-        output = subprocess.Popen(['firefox', '--version'],
-                                  stdout=subprocess.PIPE
-                                  ).communicate()[0]
-        major, minor = map(int, re.search(r"(\d+).(\d+)", output).groups())
-        return (major, minor) >= (3, 6)
+        try:
+            output = subprocess.Popen(['firefox', '--version'],
+                                      stdout=subprocess.PIPE
+                                      ).communicate()[0]
+            major, minor = map(int, re.search(r"(\d+).(\d+)", output).groups())
+            return (major, minor) >= (3, 6)
+        except Exception:
+            return False
+
+    @classmethod
+    def check_chrome_version(cls):
+        # checks if google-chrome is older than 24.0
+        # note: chromium 6 does not work with selenium!
+        try:
+            output = subprocess.Popen(['google-chrome', '--version'],
+                                      stdout=subprocess.PIPE
+                                      ).communicate()[0]
+            major, minor = map(int, re.search(r"(\d+).(\d+)", output).groups())
+            return (major, minor) >= (24, 0)
+        except Exception:
+            return False
 
     @classmethod
     def check_adhocracy_online(cls):
