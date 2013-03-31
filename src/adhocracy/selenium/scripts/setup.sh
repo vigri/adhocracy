@@ -24,7 +24,10 @@ rm *.deb
 # get to main dir
 cd ..
 
+# create folders
 mkdir -p res
+mkdir -p log
+mkdir -p tmp
 
 cd res
 echo ""

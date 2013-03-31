@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import selenium001
 import unittest
 import time
 
 from selenium.common.exceptions import TimeoutException
-from selenium001 import selTest  # ,additionalInfoOnException, jsRequired
+from seleniumBase import selTest
 
 
 class Test_basic(selTest):
