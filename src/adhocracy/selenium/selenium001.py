@@ -426,6 +426,15 @@ class selTest(unittest.TestCase):
         if hasattr(cls, 'driver'):
             cls.driver.close()
 
+        # if chrome was used we need to kill chromedriver manually
+        if hasattr(cls, 'chromedriverPid'):
+            os.kill(cls.chromedriverPid, signal.SIGKILL)
+
+            # remove pid file
+            pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.chromedriverPid) + '.pid')
+            if os.path.isfile(pidfilename):
+                os.remove(pidfilename)
+
         # htmlunit needs a selenium server. If HU has been used, shutdown the server now
         if cls.envSelectedBrowser == 'htmlunit':
             cls.shutdown_selenium_server_standalone()
@@ -469,30 +478,36 @@ class selTest(unittest.TestCase):
     @classmethod
     def _create_default_user(cls):
         # This function creates a default user which can be used for other interactions within tests
+        # we do here our error handling, since without raiseException=False tearDownClass will not be called
+
         creationTime = int(time.time())
         userName = str(creationTime) + cls.envSelectedBrowser
-        cls.loadPage('/register')
 
-        i_username = cls.waitCSS('form[name="create_user"] input[name="user_name"]')
-        i_username.send_keys(userName)
+        try:
+            cls.loadPage('/register')
+            i_username = cls.waitCSS('form[name="create_user"] input[name="user_name"]',raiseException=False)
+            i_username.send_keys(userName)
+            
+            email = cls.waitCSS('form[name="create_user"] input[name="email"]',raiseException=False)
+            email.send_keys(userName + '@example.com')
 
-        email = cls.waitCSS('form[name="create_user"] input[name="email"]')
-        email.send_keys(userName + '@example.com')
+            pwd = cls.waitCSS('form[name="create_user"] input[name="password"]',raiseException=False)
+            pwd.send_keys('test')
 
-        pwd = cls.waitCSS('form[name="create_user"] input[name="password"]')
-        pwd.send_keys('test')
+            pwd2 = cls.waitCSS('form[name="create_user"] input[name="password_confirm"]',raiseException=False)
+            pwd2.send_keys('test')
 
-        pwd2 = cls.waitCSS('form[name="create_user"] input[name="password_confirm"]')
-        pwd2.send_keys('test')
+            submit = cls.waitCSS('form[name="create_user"] input[type="submit"]',raiseException=False)
+            submit.click()
 
-        submit = cls.waitCSS('form[name="create_user"] input[type="submit"]')
-        submit.click()
-
-        cls.waitCSS('#user_menu')
-        cls.force_logout()
-        cls.adhocracy_login_user['username'] = userName
-        cls.adhocracy_login_user['password'] = 'test'
-
+            cls.waitCSS('#user_menu',raiseException=False)
+            cls.force_logout()
+            cls.adhocracy_login_user['username'] = userName
+            cls.adhocracy_login_user['password'] = 'test'
+        except TimeoutException:
+            print('  > Error creating default user')
+            cls.tearDownClass()
+            sys.exit(0)
     #### Login functions
     @classmethod
     def _login_user(cls):
@@ -640,12 +655,25 @@ class selTest(unittest.TestCase):
                 else:
                     # installed version of firefox not found or too old.
                     # user didn't set the env. var... we will stop here.
+                    cls.tearDownClass()
                     raise Exception('Installed firefox version not found or too old. You may use the env. var. "selUseFirefoxBin" to use a firefox binary specified in selenium.ini')
+                    sys.exit(0)
 
         elif browser == 'chrome':
             cls.driver = webdriver.Chrome(
                                         os.path.join(cls.script_dir, cls.getConfig('Selenium')['chrome']),
                                         service_log_path=os.path.join('log', 'chromedriver'))
+
+            # since chromedriver will not be closed even if we call cls.driver.close()
+            # we need to store the PID of chromedriver and kill it inside tearDownClass()
+            cls.chromedriverPid = cls.driver.service.process.pid
+
+            # Write PID file
+            pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.chromedriverPid) + '.pid')
+            pidfile = open(pidfilename, 'wb')
+            pidfile.write(str(cls.chromedriverPid))
+            pidfile.close()
+
             # No javascript-disable support for chrome!
         else:
             raise Exception('Invalid browser selected: ' + browser)
