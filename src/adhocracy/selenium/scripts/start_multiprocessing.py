@@ -24,14 +24,13 @@ def start_test(browser):
     ff_env = os.environ.copy()
 
     if useFirefoxBinary:
-        ff_env['selUseFirefoxBin'] = "True"
+        ff_env['selUseFirefoxBin'] = "1"
 
     cmd = ['nosetests', script_folder + '/../test_basic.py', '-sv']
     subprocess.call(cmd, shell=False, env=ff_env)
 
 if __name__ == '__main__':
     browser_list = ['firefox', 'chrome', 'htmlunit']
-
     pool = Pool()
     for browser in browser_list:
         pool.apply_async(start_test, [browser])

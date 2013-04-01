@@ -20,6 +20,7 @@ import signal
 import sys
 import time
 import inspect
+import tempfile
 
 pth = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
 script_folder = os.path.join(pth, '..', '..', '..', 'scripts')
@@ -206,7 +207,7 @@ class selTest(unittest.TestCase):
             raise Exception("\n".join(errors))
 
         # Write PID file
-        pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pAdhocracy_server.pid) + '.pid')
+        pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.pAdhocracy_server.pid) + '.pid')
         pidfile = open(pidfilename, 'wb')
         pidfile.write(str(cls.pAdhocracy_server.pid))
         pidfile.close()
@@ -214,7 +215,7 @@ class selTest(unittest.TestCase):
     @classmethod
     def shutdown_adhocracy(cls):
         if hasattr(cls, 'pAdhocracy_server'):
-            pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pAdhocracy_server.pid) + '.pid')
+            pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.pAdhocracy_server.pid) + '.pid')
 
             os.killpg(cls.pAdhocracy_server.pid, signal.SIGTERM)
 
@@ -273,7 +274,7 @@ class selTest(unittest.TestCase):
         os.environ["DISPLAY"] = ":" + str(display_number)
 
         # Write PID file
-        pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pXvfb.pid) + '.pid')
+        pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.pXvfb.pid) + '.pid')
         pidfile = open(pidfilename, 'wb')
         pidfile.write(str(cls.pXvfb.pid))
         pidfile.close()
@@ -281,7 +282,7 @@ class selTest(unittest.TestCase):
     @classmethod
     def _remove_xvfb_display(cls):
         if hasattr(cls, 'pXvfb'):
-            pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pXvfb.pid) + '.pid')
+            pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.pXvfb.pid) + '.pid')
 
             cls.pXvfb.kill()
             # restore the old DISPLAY-var
@@ -299,12 +300,16 @@ class selTest(unittest.TestCase):
         nullin = open('/dev/null', 'rb')
 
         creationTime = int(time.time())
-        cls.video_path = '/tmp/seleniumTest_' + str(creationTime) + '.mpg'
+
+        tmpfile = tempfile.mkstemp('.mpg', 'seleniumVideo_', '/tmp')
+        cls.video_path = tmpfile[1]
+
         cmd = ['ffmpeg',
                '-f', 'x11grab',
                '-r', '25',
                '-s', '1024x768',
                '-i', ':' + cls.new_display + '.0',
+               '-y',
                '-qmax', '10',
                cls.video_path]
 
@@ -314,7 +319,7 @@ class selTest(unittest.TestCase):
                                        stdin=nullin)
 
         # Write PID file
-        pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pFfmpeg.pid) + '.pid')
+        pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.pFfmpeg.pid) + '.pid')
         pidfile = open(pidfilename, 'wb')
         pidfile.write(str(cls.pFfmpeg.pid))
         pidfile.close()
@@ -322,7 +327,7 @@ class selTest(unittest.TestCase):
     @classmethod
     def _stop_video(cls):
         if hasattr(cls, 'pFfmpeg'):
-            pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.pFfmpeg.pid) + '.pid')
+            pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.pFfmpeg.pid) + '.pid')
 
             cls.pFfmpeg.kill()
 
@@ -436,7 +441,7 @@ class selTest(unittest.TestCase):
             os.kill(cls.chromedriverPid, signal.SIGKILL)
 
             # remove pid file
-            pidfilename = os.path.join(cls.pidfolder,'selenium_' + str(cls.chromedriverPid) + '.pid')
+            pidfilename = os.path.join(cls.pidfolder, 'selenium_' + str(cls.chromedriverPid) + '.pid')
             if os.path.isfile(pidfilename):
                 os.remove(pidfilename)
 
@@ -490,22 +495,22 @@ class selTest(unittest.TestCase):
 
         try:
             cls.loadPage('/register')
-            i_username = cls.waitCSS('form[name="create_user"] input[name="user_name"]',raiseException=False)
+            i_username = cls.waitCSS('form[name="create_user"] input[name="user_name"]', raiseException=False)
             i_username.send_keys(userName)
-            
-            email = cls.waitCSS('form[name="create_user"] input[name="email"]',raiseException=False)
+
+            email = cls.waitCSS('form[name="create_user"] input[name="email"]', raiseException=False)
             email.send_keys(userName + '@example.com')
 
-            pwd = cls.waitCSS('form[name="create_user"] input[name="password"]',raiseException=False)
+            pwd = cls.waitCSS('form[name="create_user"] input[name="password"]', raiseException=False)
             pwd.send_keys('test')
 
-            pwd2 = cls.waitCSS('form[name="create_user"] input[name="password_confirm"]',raiseException=False)
+            pwd2 = cls.waitCSS('form[name="create_user"] input[name="password_confirm"]', raiseException=False)
             pwd2.send_keys('test')
 
-            submit = cls.waitCSS('form[name="create_user"] input[type="submit"]',raiseException=False)
+            submit = cls.waitCSS('form[name="create_user"] input[type="submit"]', raiseException=False)
             submit.click()
 
-            cls.waitCSS('#user_menu',raiseException=False)
+            cls.waitCSS('#user_menu', raiseException=False)
             cls.force_logout()
             cls.adhocracy_login_user['username'] = userName
             cls.adhocracy_login_user['password'] = 'test'
@@ -513,6 +518,7 @@ class selTest(unittest.TestCase):
             print('  > Error creating default user')
             cls.tearDownClass()
             sys.exit(0)
+
     #### Login functions
     @classmethod
     def _login_user(cls):

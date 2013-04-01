@@ -132,7 +132,7 @@ class Test_basic(selTest):
         label = self.waitCSS('form[name="create_proposal"] input[name="label"]')
         label.send_keys(proposalName)
 
-        tags = self.waitCSS('form[name="create_proposal"] input[name="tag"]')
+        tags = self.waitCSS('form[name="create_proposal"] input[name="tags"]')
         tags.send_keys(proposalTags)
 
         description = self.waitCSS('form[name="create_proposal"] textarea[name="text"]')
@@ -219,7 +219,11 @@ class Test_basic(selTest):
     @selTest.additionalInfoOnException
     def test_create_proposal_comment(self):
         self.ensure_login()
-        self.loadPage(selTest.defaultProposalUrl)
+
+        if hasattr(selTest, 'defaultProposalUrl'):
+            self.loadPage(selTest.defaultProposalUrl)
+        else:
+            raise Exception('Proposal was not created successfully before.')
 
         self.waitCSS('#discussions')
 
