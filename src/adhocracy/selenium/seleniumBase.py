@@ -372,6 +372,13 @@ class selTest(unittest.TestCase):
         cls.defaultUserPassword = ''
         cls.defaultProposalUrl = ''
 
+        nullout = open('/dev/null', 'wb')
+        # kill old processes which are created by this script and older than 24h
+        cmd = os.path.join(cls.script_dir,'scripts','cleanup.py')
+        cls.cleanup = subprocess.Popen(['python',cmd],stderr=nullout,stdout=nullout)
+
+        if not os.path.exists('log'):
+            os.makedirs('log')
         ##### Process environment variables
 
         # disable Xvfb
@@ -457,6 +464,9 @@ class selTest(unittest.TestCase):
         # check if Xvfb has been used, if so, kill the process
         if not cls.envShowTests:
             cls._remove_xvfb_display()
+
+        ## kill cleanup process
+        cls.cleanup.kill()
 
         # if we've recorded a video, we'll stop the recording now
         if cls.envCreateVideo:
@@ -689,7 +699,29 @@ class selTest(unittest.TestCase):
                 cls.tearDownClass()
                 raise Exception('Google-Chrome not found or too old. Please install Google-Chrome >= 24.0')
         else:
-            raise Exception('Invalid browser selected: ' + browser)
+            raise Exception('Invalid browser specified: ' + browser)
+
+    @classmethod
+    def _create_remote_webdriver(cls, browser):
+        if browser == 'htmlunit':
+            #print "using htmlunit"
+            desired_caps = webdriver.DesiredCapabilities.HTMLUNIT
+            desired_caps['version'] = '2'
+        elif browser == 'firefox':
+            #print "using firefox"
+            desired_caps = webdriver.DesiredCapabilities.FIREFOX
+        elif browser == 'chrome':
+            #print "using chrome"
+            os.environ['webdriver.chrome.driver'] = os.path.join(cls.script_dir, cls.getConfig('Selenium')['chrome'])
+            desired_caps = webdriver.DesiredCapabilities.CHROME
+        else:
+            raise Exception('Invalid browser specified: ' + browser)
+
+        cls.driver = webdriver.Remote(
+        command_executor = 'http://192.168.0.82:4444/wd/hub',
+        desired_capabilities=desired_caps
+        )
+        cls.adhocracyUrl = 'http://192.168.0.90:5001'
 
     @classmethod
     def check_firefox_version(cls):
