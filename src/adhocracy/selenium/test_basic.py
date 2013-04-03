@@ -268,6 +268,7 @@ class Test_basic(selTest):
         submit = self.waitCSS('form[name="create_feedback"] button[type="submit"]')
         submit.click()
 
+        self.waitXpath("//div[@id='col1_content']//h2[contains(text(), '" + feedbackTitle + "')]")
         self.waitCSS('#discussions')
 
 if __name__ == '__main__':

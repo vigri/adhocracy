@@ -21,6 +21,9 @@ import sys
 import time
 import inspect
 import tempfile
+import socket
+import struct
+import fcntl
 
 pth = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
 script_folder = os.path.join(pth, '..', '..', '..', 'scripts')
@@ -429,7 +432,8 @@ class selTest(unittest.TestCase):
                 cls.start_adhocracy()
 
         # create webdriver based on selected browser
-        cls._create_webdriver(browser=cls.envSelectedBrowser)
+        #cls._create_webdriver(browser=cls.envSelectedBrowser)
+        cls._create_remote_webdriver(browser=cls.envSelectedBrowser, ops='linux')
 
         # check if adhocracy is online
         if not cls.check_adhocracy_online():
@@ -702,26 +706,45 @@ class selTest(unittest.TestCase):
             raise Exception('Invalid browser specified: ' + browser)
 
     @classmethod
-    def _create_remote_webdriver(cls, browser):
-        if browser == 'htmlunit':
-            #print "using htmlunit"
+    def _create_remote_webdriver(cls, browser, ops):
+        # Select the desired browser based on config file    TODO: default case
+        if browser == "htmlunit":
             desired_caps = webdriver.DesiredCapabilities.HTMLUNIT
-            desired_caps['version'] = '2'
-        elif browser == 'firefox':
-            #print "using firefox"
+            desired_caps['version'] = "2"
+        elif browser == "firefox":
             desired_caps = webdriver.DesiredCapabilities.FIREFOX
-        elif browser == 'chrome':
-            #print "using chrome"
-            os.environ['webdriver.chrome.driver'] = os.path.join(cls.script_dir, cls.getConfig('Selenium')['chrome'])
+        elif browser == "chrome":
             desired_caps = webdriver.DesiredCapabilities.CHROME
+        elif browser == "internetexplorer":
+            desired_caps = webdriver.DesiredCapabilities.INTERNETEXPLORER
         else:
-            raise Exception('Invalid browser specified: ' + browser)
+            raise Exception('Invalid browser selected: ' + browser)
+        
+        hosts = cls.getP2PHosts()
+        #print hosts
+        # get first host which matches the desired browser and operating system
+        for host in hosts:
+            if host[2]  == ops and host[3] == browser:
+                cls.driver = webdriver.Remote(
+                    command_executor = 'http://' + host[0] + ':' + host[1] + '/wd/hub',
+                    desired_capabilities=desired_caps
+                )
+                #print('DEBUG: Text will be executed on ' + command_executor)
 
-        cls.driver = webdriver.Remote(
-        command_executor = 'http://192.168.0.82:4444/wd/hub',
-        desired_capabilities=desired_caps
-        )
-        cls.adhocracyUrl = 'http://192.168.0.90:5001'
+                # the adhocracyUrl needs to be a IP adress which can be reached through lan
+                # so adhocracy.lan:5001 might not work and 127.0.0.1:5001 can't be used.
+                # using the local ip instead
+                interface = cls.getConfig('P2P')['interface']
+                ip = cls.get_ip(interface)
+                if ip == "":
+                    raise Exception('IP address from ' + interface + ' could not be resolved')
+                else:
+                    print(' DEBUG: Using IP: ' + ip)
+                    cls.adhocracyUrl = 'http://' + ip + ':5001'
+                    return
+
+        if not hasattr(cls, 'driver'):
+            raise Exception('No proper host found for browser = ' + browser + ' and os = ' + ops)
 
     @classmethod
     def check_firefox_version(cls):
@@ -747,6 +770,52 @@ class selTest(unittest.TestCase):
             return (major, minor) >= (24, 0)
         except Exception:
             return False
+
+    @classmethod
+    def getP2PHosts(cls):
+        # search for selenium servers using bonjour
+        hosts=[]
+
+        if not os.path.exists("/usr/bin/avahi-browse"):
+            raise Exception('Avahi-browse not found')
+        client_list=subprocess.Popen(["avahi-browse","-trp","_selenium._tcp"],stdout=subprocess.PIPE)
+        client_list.wait()
+        for line in client_list.stdout.readlines():
+            if line.startswith("="):
+                try:
+                    dat=line.split(";")
+                    if len(dat) == 10:
+                        if dat[2] == "IPv4":
+                            tmp = []
+                            tmp.append(dat[7]) # ip
+                            tmp.append(dat[8])
+                            # txt_record
+                            txt_record = dat[9][1:-2]
+                            txt_data = txt_record.split('" "')
+                            browser = txt_data[0].partition('=')[2]
+                            ops = txt_data[1].partition('=')[2]
+
+                            tmp.append(ops) # operating system (windows|linux)
+                            tmp.append(browser)
+                            hosts.append(tmp)
+                except:
+                    pass
+        return hosts
+
+    @classmethod
+    def get_ip(cls, iface = 'eth0'):
+        # http://stackoverflow.com/questions/166506/finding-local-ip-addresses-using-pythons-stdlib
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sockfd = sock.fileno()
+        SIOCGIFADDR = 0x8915
+
+        ifreq = struct.pack('16sH14s', iface, socket.AF_INET, '\x00'*14)
+        try:
+            res = fcntl.ioctl(sockfd, SIOCGIFADDR, ifreq)
+        except:
+            return ""
+        ip = struct.unpack('16sH2x4s8x', res)[2]
+        return socket.inet_ntoa(ip)
 
     @classmethod
     def check_adhocracy_online(cls):
