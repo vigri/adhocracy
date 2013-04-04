@@ -432,8 +432,8 @@ class selTest(unittest.TestCase):
                 cls.start_adhocracy()
 
         # create webdriver based on selected browser
-        #cls._create_webdriver(browser=cls.envSelectedBrowser)
-        cls._create_remote_webdriver(browser=cls.envSelectedBrowser, ops='linux')
+        cls._create_webdriver(browser=cls.envSelectedBrowser)
+        #cls._create_remote_webdriver(browser=cls.envSelectedBrowser, ops='linux')
 
         # check if adhocracy is online
         if not cls.check_adhocracy_online():
