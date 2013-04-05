@@ -1,27 +1,16 @@
 #!/bin/bash 
 
-# Install all relevant dependencies for using selenium with htmlunit, chrome, firefox
+# Install all relevant dependencies for using selenium additionally with htmlunit, firefox
 # and features like video recording, youtube-upload
 
-echo "Installing xvfb, python-progressbar, python-pycur,l ia32-libs-gtk, ffmpeg..."
-sudo apt-get -f install
-sudo apt-get install xvfb python-progressbar python-pycurl ia32-libs-gtk ffmpeg avahi-utils -y -q
+PKGS_TO_INSTALL="xvfb python-progressbar python-pycurl ia32-libs-gtk ffmpeg avahi-utils google-chrome-stable"
+echo "Installing $PKGS_TO_INSTALL"
+sudo apt-get install $PKGS_TO_INSTALL -y -q
 
 echo ""
-echo "Getting Google Chrome..."
-# check if user has a x64 or x86 system...
-MACHINE_TYPE=`uname -m`
-if [ ${MACHINE_TYPE} == 'x86_64' ]; then
-  wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-  sudo dpkg -i google-chrome-stable_current_amd64.deb
-else
-  wget -q https://dl.google.com/linux/direct/google-chrome-stable_current_i386.deb
-  sudo dpkg -i google-chrome-stable_current_i386.deb
-fi
 
-rm *.deb
 
-# get to main dir
+# go to main dir
 cd ..
 
 # create folders
@@ -29,8 +18,8 @@ mkdir -p res
 mkdir -p log
 mkdir -p tmp
 rm -rf res/selenium
-rm -rf res/chrome
 rm -rf res/firefox
+rm -rf res/chrome
 
 cd res
 echo ""
@@ -40,22 +29,25 @@ cd selenium
 wget -nv -O selenium-server-standalone.jar https://selenium.googlecode.com/files/selenium-server-standalone-2.31.0.jar
 cd ..
 
-echo "Getting Chromedriver..."
-mkdir -p chrome
-cd chrome
-wget -nv https://chromedriver.googlecode.com/files/chromedriver_linux64_26.0.1383.0.zip
-unzip -j -qq *.zip
-rm *.zip
-cd ..
-
 echo "Getting Firefox..."
-mkdir -p firefox
-cd firefox
-cd ..
-wget -q --output-document firefox.tar.bz2 http://download-origin.cdn.mozilla.net/pub/mozilla.org/firefox/releases/19.0.2/linux-x86_64/en-US/firefox-19.0.2.tar.bz2
+wget -nv -O firefox.tar.bz2 http://download-origin.cdn.mozilla.net/pub/mozilla.org/firefox/releases/19.0.2/linux-x86_64/en-US/firefox-19.0.2.tar.bz2
 tar xf firefox.tar.bz2
 rm firefox.tar.bz2
-cd ..
+
+echo "Getting chromedriver.."
+mkdir -p chrome
+cd chrome
+# get chromedriver for selenium_node.py (p2p-testing) (even if may be located in /usr/local/bin)
+if [ `getconf LONG_BIT` = "64" ]
+then
+    wget -nv -O chromedriver_linux https://chromedriver.googlecode.com/files/chromedriver_linux64_26.0.1383.0.zip
+    
+else
+    wget -nv -O chromedriver_linux https://chromedriver.googlecode.com/files/chromedriver_linux32_26.0.1383.0.zip
+fi
+
+unzip -j -qq chromedriver_linux
+rm chromedriver_linux
 
 echo ""
 echo "> Done..."

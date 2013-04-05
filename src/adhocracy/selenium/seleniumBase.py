@@ -691,11 +691,10 @@ class selTest(unittest.TestCase):
         elif browser == 'chrome':
             if cls.check_chrome_version():
                 log_path = os.path.join('log', 'chromedriver')
-                chromedriver_path = os.path.join(cls.script_dir, cls.getConfig('Selenium')['chrome'])
+                #chromedriver_path = os.path.join(cls.script_dir, cls.getConfig('Selenium')['chrome'])
 
-                #os.environ['webdriver.chrome.driver'] = 'res/chrome/chromedriver' #chromedriver_path
-
-                cls.driver = webdriver.Chrome(executable_path=chromedriver_path, service_log_path=log_path)
+                #executable_path=chromedriver_path, 
+                cls.driver = webdriver.Chrome(service_log_path=log_path)
                 # since chromedriver will not be closed even if we call cls.driver.close()
                 # we need to store the PID of chromedriver and kill it inside tearDownClass()
                 cls.chromedriverPid = cls.driver.service.process.pid
