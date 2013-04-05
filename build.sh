@@ -295,6 +295,20 @@ exec bin/paster serve --reload etc/adhocracy-interactive.ini
 ' > "bin/adhocracy_interactive.sh"
 chmod a+x "bin/adhocracy_interactive.sh"
 
+
+# get chromedriver for selenium testing
+if [ `getconf LONG_BIT` = "64" ]
+then
+    download "https://chromedriver.googlecode.com/files/chromedriver_linux64_26.0.1383.0.zip" "chromedriver_linux"
+    
+else
+    download "https://chromedriver.googlecode.com/files/chromedriver_linux32_26.0.1383.0.zip" "chromedriver_linux"
+fi
+
+unzip -j -qq chromedriver_linux
+rm chromedriver_linux
+$SUDO_CMD mv -f chromedriver /usr/local/bin/chromedriver
+
 if $autostart; then
     bin/supervisord
     echo "Use ${ROOTDIR_FROM_CALLER}bin/supervisorctl to control running services."
