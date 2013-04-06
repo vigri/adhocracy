@@ -26,7 +26,7 @@ def start_test(browser):
     if useFirefoxBinary:
         ff_env['selUseFirefoxBin'] = "1"
 
-    cmd = ['nosetests', script_folder + '/../test_basic.py', '-sv']
+    cmd = ['nosetests', script_folder + '/test_basic.py', '-sv']
     subprocess.call(cmd, shell=False, env=ff_env)
 
 if __name__ == '__main__':

@@ -1,5 +1,8 @@
 #!/bin/bash
 
+SCRIPT=`realpath $0`
+SCRIPTPATH=`dirname $SCRIPT`
+
 # Helper function for pushing elements to browser-array
 function browser_push(){
 	browser=("${browser[@]}" "$1")
@@ -8,37 +11,48 @@ function browser_push(){
 function usage {
 	echo ""
 	echo "Run nosetests with additional features"
-	echo "   -a, use all available browsers"
-	echo "   -c, use Chrome for testing (default)"
-	echo "   -f, use Firefox for testing"
+	echo "   -a, use all available browsers (except Internet Explorer)"
+	echo "   -c, use Chrome (default)"
+	echo "   -f, use Firefox"
         echo "   -b, use Firefox binary specified in selenium.ini"
+	echo "   -i, use Internet Explorer (only available with option -r)"
         echo "   -x, use HTMLUnit for testing"
 	echo ""
+	echo "   -r, use remote testing"
+	echo "   -l, use linux (remote testing)"
+	echo "   -w, use windows (remote testing)"
+	echo ""
 	echo "   -h, print this message"
-	echo "   -u, specify url for remote adhocracy server (ex. http://192.168.0.100:5001)"
-        echo "   -w, start adhocracy server"
+	echo ""
+        echo "   -t, start adhocracy server"
+	echo "   -u, specify url existing adhocracy server (ex. http://192.168.0.100:5001)"
+	echo ""
         echo "   -j, disable Javascript (if supported by browser)"
-        echo "   -y, make testing visible (not available for htmlunit)"
+        echo "   -q, make testing visible (not available for htmlunit)"
         echo "   -z, record video (not available for htmlunit)"
-	echo "   -b, upload recorded video on Youtube"
+	echo "   -y, upload recorded video on Youtube"
 	echo "   -*, all other commands will be passed directly to nosetests"
         echo ""
 	exit
 }
-while getopts :u:hacfbjwxyzb opt; do
+while getopts :acfbixrlwhtu:jqzy opt; do
     case "$opt" in
-	    u) adhocracy=$OPTARG ;;
-	    h) usage ;;
-	    j) disableJS=1 ;;
 	    a) browser_push "chrome"; browser_push "firefox"; browser_push "htmlunit" ;;
 	    c) browser_push "chrome" ;;
 	    f) browser_push "firefox" ;;
             b) ffbin=1 ;;
-	    w) startAdh=1 ;;
+	    i) browser_push "internetexplorer" ;;
 	    x) browser_push "htmlunit" ;;
-	    y) testVis=1 ;;
+            r) remoteTest=1 ;;
+	    l) linux=1 ;;
+	    w) windows=1 ;;
+	    h) usage ;;
+	    t) startAdh=1 ;;
+	    u) adhocracy=$OPTARG ;;
+	    j) disableJS=1 ;;
+	    q) testVis=1 ;;
 	    z) video=1 ;;
-	    b) youtube=1 ;;
+	    y) youtube=1 ;;
 	    \?) commands="$commands "-"$OPTARG" ;;
     esac
 done
@@ -46,7 +60,7 @@ done
 shift $((OPTIND - 1))
 
 echo "######################################"
-# Check if an url for remote adhocracy server has been set
+# Check JS option
 if [ "$disableJS" = 1 ]; then
 	export selDisableJS=1
 	echo " Javascript:    off"
@@ -60,6 +74,24 @@ if [ "$startAdh" = 1 ]; then
 	echo " Adhocracy:     start"
 else
 	echo " Adhocracy:     don't start"
+fi
+
+# Check if windows was specified for remote testing
+if [ -n "$windows" ]; then
+	export selOs="windows"
+	echo " OS:            windows"
+fi
+
+# Check if linux was specified for remote testing, if yes, we override selOs
+if [ -n "$linux" ]; then
+	export selOs="linux"
+	echo " OS:            linux"
+fi
+
+# Check for test type
+if [ -n "$remoteTest" ]; then
+	export selRemote=$remoteTest
+	echo " Test type:     remote"
 fi
 
 # Check if an url for remote adhocracy server has been set
@@ -106,6 +138,6 @@ fi
 for i in "${browser[@]}"; do
 	export selBrowser=$i
 	echo "Starting nosetests with $i browser.........."
-	NOSETESTS="nosetests $commands"
+	NOSETESTS="nosetests $SCRIPTPATH/ $commands"
 	$NOSETESTS
 done

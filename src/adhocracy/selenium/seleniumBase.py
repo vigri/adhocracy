@@ -250,10 +250,9 @@ class selTest(unittest.TestCase):
     #### xvfb and video-record functions
     @classmethod
     def _create_xvfb_display(cls):
-        # Used for xvfb output. For debugging purposes this can be set to a file
+        # For debugging purposes this can be set to a file
         null = open('/dev/null', 'wb')
 
-        # Get virtual display
         # get first free virtual display number
         display_number = 0
         while True:
@@ -388,7 +387,6 @@ class selTest(unittest.TestCase):
             os.makedirs('tmp')
 
         ##### Process environment variables
-
         # disable Xvfb
         cls.envShowTests = os.environ.get('selShowTests', '') == '1'
 
@@ -404,6 +402,9 @@ class selTest(unittest.TestCase):
         # start local adhocracy server
         cls.envStartAdh = os.environ.get('selStartAdh', '') == '1'
 
+        # start local adhocracy server
+        cls.envRemoteTest = os.environ.get('selRemote', '') == '1'
+
         # remote adhocracy url
         try:
             cls.adhocracyUrl = os.environ['selAdhocracyUrl']
@@ -413,10 +414,26 @@ class selTest(unittest.TestCase):
             cls.adhocracyUrl = 'http://adhocracy.lan:5001'
             cls.adhocracy_remote = False
 
-        #### Take actions based on env. vars.
+        # lets see if the user defined an desired OS
+        if not cls.envRemoteTest:
+            cls.envSelectedOs = 'linux'
+        else:
+            try:
+                cls.envSelectedOs = os.environ['selOs']
+                # currently we only support windows and linux
+                if cls.envSelectedOs != 'linux' and cls.envSelectedOs != 'windows':
+                    raise Exception('Please select an valid OS (linux | windows).')
+            except KeyError:
+                raise Exception('Please select an valid OS (linux | windows).')
 
+        #### Take actions based on env. vars.
         # Since htmlunit has no real display output, envShowTests and envCreateVideo cannot be used
         if cls.envSelectedBrowser == 'htmlunit':
+            cls.envShowTests = False
+            cls.envCreateVideo = False
+
+        # just to be sure, we deactivate invalid options
+        if cls.envRemoteTest:
             cls.envShowTests = False
             cls.envCreateVideo = False
 
@@ -436,9 +453,11 @@ class selTest(unittest.TestCase):
                 # Start Adhocracy
                 cls.start_adhocracy()
 
-        # create webdriver based on selected browser
-        cls._create_webdriver(browser=cls.envSelectedBrowser)
-        #cls._create_remote_webdriver(browser=cls.envSelectedBrowser, ops='linux')
+        # create webdriver based on test-type
+        if cls.envRemoteTest:
+            cls._create_remote_webdriver(browser=cls.envSelectedBrowser, ops =cls.envSelectedOs)
+        else:
+            cls._create_webdriver(browser=cls.envSelectedBrowser)
 
         # check if adhocracy is online
         if not cls.check_adhocracy_online():
@@ -471,9 +490,9 @@ class selTest(unittest.TestCase):
                 cls._database_backup_restore()
 
         # check if Xvfb has been used, if so, kill the process
-        if not cls.envShowTests:
+        """if not cls.envShowTests:
             cls._remove_xvfb_display()
-
+        """
         ## kill cleanup process
         cls.cleanup.kill()
 
@@ -710,7 +729,7 @@ class selTest(unittest.TestCase):
                 cls.tearDownClass()
                 raise Exception('Google-Chrome not found or too old. Please install Google-Chrome >= 24.0')
         else:
-            raise Exception('Invalid browser specified: ' + browser)
+            raise Exception('Invalid local browser specified: ' + browser)
 
     @classmethod
     def _create_remote_webdriver(cls, browser, ops):
