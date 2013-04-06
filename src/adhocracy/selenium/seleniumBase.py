@@ -757,7 +757,7 @@ class selTest(unittest.TestCase):
                 )
                 #print('DEBUG: Text will be executed on ' + command_executor)
 
-                # the adhocracyUrl needs to be a IP adress which can be reached through lan
+                # the adhocracyUrl needs to be a IP address which can be reached through lan
                 # so adhocracy.lan:5001 might not work and 127.0.0.1:5001 can't be used.
                 # using the local ip instead
                 interface = cls.getConfig('P2P')['interface']

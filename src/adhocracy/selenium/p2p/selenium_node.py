@@ -76,7 +76,7 @@ elif browser == "firefox":
         raise Exception('Internet Explorer driver not found')
 elif browser == "internetexplorer":
     if os.path.isfile(internetexplorer):
-        cmd = ['java', '-Djava.security.egd=file:/dev/./urandom', '-Dwebdriver.ie.driver=' + firefox, '-jar', server_path]
+        cmd = ['java', '-Djava.security.egd=file:/dev/./urandom', '-Dwebdriver.ie.driver=' + internetexplorer, '-jar', server_path]
 elif browser == "htmlunit":
     cmd = ['java', '-Djava.security.egd=file:/dev/./urandom', '-jar', server_path]
 else:
