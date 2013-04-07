@@ -50,13 +50,17 @@ def isWindows():
 
 root_folder = os.path.join(pth, '..')
 
+
 server_path = os.path.join(root_folder,'res', 'selenium', 'selenium-server-standalone.jar')
 
+if not os.path.isfile(server_path):
+    raise Exception('Selenium-Server not found in res/selenium')
+                  
 # Paths
 if isWindows():
     txt_os = "windows"  # txt record for bonjour
     chromedriver = os.path.join(root_folder, 'res','chrome','chromedriver.exe')
-    firefox = os.path.join('C:','Programme','Mozilla Firefox','firefox.exe')
+    firefox = os.path.join('C:' + os.sep,'Programme','Mozilla Firefox','firefox.exe')
     internetexplorer = os.path.join(root_folder, 'res','internetexplorer','IEDriverServer.exe')
 else:
     txt_os = "linux" # txt record for bonjour
@@ -73,7 +77,7 @@ elif browser == "firefox":
     if os.path.isfile(firefox):
         cmd = ['java', '-Djava.security.egd=file:/dev/./urandom', '-Dwebdriver.firefox.bin=' + firefox, '-jar', server_path]
     else:
-        raise Exception('Internet Explorer driver not found')
+        raise Exception('Firefox not found')
 elif browser == "internetexplorer":
     if os.path.isfile(internetexplorer):
         cmd = ['java', '-Djava.security.egd=file:/dev/./urandom', '-Dwebdriver.ie.driver=' + internetexplorer, '-jar', server_path]

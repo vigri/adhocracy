@@ -24,6 +24,7 @@ import tempfile
 import socket
 import struct
 import fcntl
+import random
 
 pth = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
 script_folder = os.path.join(pth, '..', '..', '..', 'scripts')
@@ -62,7 +63,6 @@ class selTest(unittest.TestCase):
             try:
                 cls.driver.execute_script('return 0;')
             except Exception as e:
-                #print('\n  > Exception: %r' % e)
                 error_text = 'This function requires JavaScript'
                 print('\n  > Exception: ' + error_text)
                 raise Exception(error_text)
@@ -80,9 +80,12 @@ class selTest(unittest.TestCase):
                     date + " - Sourcecode.html": {"content": content},
                     date + " - Logfile.text": {"content": log}}
         })
-        res = urllib2.urlopen('https://api.github.com/gists', d).read()
-        resd = json.loads(res)
-        return resd['html_url']
+        try:
+            res = urllib2.urlopen('https://api.github.com/gists', d).read()
+            resd = json.loads(res)
+            return resd['html_url']
+        except Exception:
+            return 'Upload failed'
 
     @classmethod
     def imgur_upload(cls, picture):
@@ -142,7 +145,8 @@ class selTest(unittest.TestCase):
                 return func(cls.driver)
             except TimeoutException:
                 raise ElementNotFound(css)
-
+            except Exception:
+                raise
         else:
             func = lambda driver: driver.find_element_by_css_selector(css)
             WebDriverWait(cls.driver, wait).until(func, css)
@@ -157,6 +161,8 @@ class selTest(unittest.TestCase):
                 return func(cls.driver)
             except TimeoutException:
                 raise ElementNotFound(xpath)
+            except Exception:
+                raise
         else:
             func = lambda driver: driver.find_element_by_xpath(xpath)
             WebDriverWait(cls.driver, wait).until(func)
@@ -167,6 +173,10 @@ class selTest(unittest.TestCase):
     def start_selenium_server_standalone(cls):
         null = open('/dev/null', 'wb')
         server_path = os.path.join(cls.script_dir, cls.getConfig('Selenium')['server'])
+
+        if not os.path.isfile(server_path):
+            raise IOError('Selenium Server not found')
+
         cmd = ['java', '-Djava.security.egd=file:/dev/./urandom', '-jar', server_path]
         cls.pSel_server = subprocess.Popen(cmd,
                                            stderr=null,
@@ -256,6 +266,7 @@ class selTest(unittest.TestCase):
         # get first free virtual display number
         display_number = 0
         while True:
+            #display_number = random.randint(10,500) #Inclusive
             display_number += 1
             if not os.path.isfile('/tmp/.X' + str(display_number) + '-lock'):
                 break
@@ -357,11 +368,12 @@ class selTest(unittest.TestCase):
         config_path = os.path.join(cls.script_dir, 'selenium.ini')
 
         if not os.path.isfile(config_path):
-            raise Exception('Configuration file selenium.ini not found!')
+            raise IOError('Configuration file selenium.ini not found!')
         cls.Config = ConfigParser.ConfigParser()
         cls.Config.read(config_path)
 
         # general vars
+        cls.adhocracyUrl = 'http://adhocracy.lan:5001'
         cls.login_cookie = ''
         cls.adhocracy_logfile = None
         cls.adhocracy_dir = cls.getConfig('Adhocracy')['dir']
@@ -402,18 +414,9 @@ class selTest(unittest.TestCase):
         # start local adhocracy server
         cls.envStartAdh = os.environ.get('selStartAdh', '') == '1'
 
-        # start local adhocracy server
+        # remote testing
         cls.envRemoteTest = os.environ.get('selRemote', '') == '1'
-
-        # remote adhocracy url
-        try:
-            cls.adhocracyUrl = os.environ['selAdhocracyUrl']
-            cls.adhocracy_remote = True
-            cls.envStartAdh = False
-        except KeyError:
-            cls.adhocracyUrl = 'http://adhocracy.lan:5001'
-            cls.adhocracy_remote = False
-
+        
         # lets see if the user defined an desired OS
         if not cls.envRemoteTest:
             cls.envSelectedOs = 'linux'
@@ -422,9 +425,9 @@ class selTest(unittest.TestCase):
                 cls.envSelectedOs = os.environ['selOs']
                 # currently we only support windows and linux
                 if cls.envSelectedOs != 'linux' and cls.envSelectedOs != 'windows':
-                    raise Exception('Please select an valid OS (linux | windows).')
+                    raise AssertionError('Please select an valid OS (linux | windows).')
             except KeyError:
-                raise Exception('Please select an valid OS (linux | windows).')
+                raise AssertionError('Please select an valid OS (linux | windows).')
 
         #### Take actions based on env. vars.
         # Since htmlunit has no real display output, envShowTests and envCreateVideo cannot be used
@@ -445,13 +448,11 @@ class selTest(unittest.TestCase):
         if cls.envCreateVideo:
             cls._create_video()
 
-        # Start adhocracy server if specified
-        if not cls.adhocracy_remote:
-            if cls.envStartAdh:
-                # create a backup of the actual database
-                cls._database_backup_create()
-                # Start Adhocracy
-                cls.start_adhocracy()
+        if cls.envStartAdh:
+            # create a backup of the actual database
+            cls._database_backup_create()
+            # Start Adhocracy
+            cls.start_adhocracy()
 
         # create webdriver based on test-type
         if cls.envRemoteTest:
@@ -462,7 +463,7 @@ class selTest(unittest.TestCase):
         # check if adhocracy is online
         if not cls.check_adhocracy_online():
             cls.tearDownClass()
-            raise Exception('Adhocracy-Website not available.')
+            raise IOError('Adhocracy-Website not available.')
 
         cls._create_default_user()
 
@@ -519,8 +520,8 @@ class selTest(unittest.TestCase):
                     print ('  > ' + output)
 
     def setUp(self):
-        if not self.setup_done:
-            raise Exception('Global setup has not been called. Please use Python >=2.7 or nosetests')
+        if not hasattr(self, 'setup_done'):
+            raise StandardError('Global setup has not been called. Please use Python >=2.7 or nosetests')
 
     #### helper functions
     @classmethod
@@ -533,27 +534,28 @@ class selTest(unittest.TestCase):
 
         try:
             cls.loadPage('/register')
-            i_username = cls.waitCSS('form[name="create_user"] input[name="user_name"]', raiseException=False)
+            i_username = cls.waitCSS('form[name="create_user"] input[name="user_name"]')
             i_username.send_keys(userName)
 
-            email = cls.waitCSS('form[name="create_user"] input[name="email"]', raiseException=False)
+            email = cls.waitCSS('form[name="create_user"] input[name="email"]')
             email.send_keys(userName + '@example.com')
 
-            pwd = cls.waitCSS('form[name="create_user"] input[name="password"]', raiseException=False)
+            pwd = cls.waitCSS('form[name="create_user"] input[name="password"]')
             pwd.send_keys('test')
 
-            pwd2 = cls.waitCSS('form[name="create_user"] input[name="password_confirm"]', raiseException=False)
+            pwd2 = cls.waitCSS('form[name="create_user"] input[name="password_confirm"]')
             pwd2.send_keys('test')
 
-            submit = cls.waitCSS('form[name="create_user"] input[type="submit"]', raiseException=False)
+            submit = cls.waitCSS('form[name="create_user"] input[type="submit"]')
             submit.click()
 
-            cls.waitCSS('#user_menu', raiseException=False)
+            cls.waitCSS('#user_menu')
             cls.force_logout()
             cls.adhocracy_login_user['username'] = userName
             cls.adhocracy_login_user['password'] = 'test'
-        except TimeoutException:
+        except ElementNotFound as e:
             print('  > Error creating default user')
+            cls._displayInformation(e)
             cls.tearDownClass()
             sys.exit(0)
 
@@ -695,6 +697,10 @@ class selTest(unittest.TestCase):
 
             if useFirefoxBin:
                 firefoxBinary = os.path.join(cls.script_dir, cls.getConfig('Selenium')['firefox'])
+
+                if not os.path.isfile(firefoxBinary):
+                        raise IOError('Specified firefox binary in selenium.ini not found')
+
                 ffbin = webdriver.firefox.firefox_binary.FirefoxBinary(firefoxBinary)
                 cls.driver = webdriver.Firefox(firefox_profile=fp, firefox_binary=ffbin)
             else:
@@ -705,14 +711,11 @@ class selTest(unittest.TestCase):
                     # installed version of firefox not found or too old.
                     # user didn't set the env. var... we will stop here.
                     cls.tearDownClass()
-                    raise Exception('Installed firefox version not found or too old. You may use the env. var. "selUseFirefoxBin" to use a firefox binary specified in selenium.ini')
+                    raise IOError('Installed firefox version not found or too old. You may set the env. var. "selUseFirefoxBin"=1 to use a firefox binary specified in selenium.ini')
 
         elif browser == 'chrome':
             if cls.check_chrome_version():
                 log_path = os.path.join('log', 'chromedriver')
-                #chromedriver_path = os.path.join(cls.script_dir, cls.getConfig('Selenium')['chrome'])
-
-                #executable_path=chromedriver_path, 
                 cls.driver = webdriver.Chrome(service_log_path=log_path)
                 # since chromedriver will not be closed even if we call cls.driver.close()
                 # we need to store the PID of chromedriver and kill it inside tearDownClass()
@@ -727,9 +730,9 @@ class selTest(unittest.TestCase):
                 # No javascript-disable support for chrome!
             else:
                 cls.tearDownClass()
-                raise Exception('Google-Chrome not found or too old. Please install Google-Chrome >= 24.0')
+                raise IOError('Google-Chrome not found or too old. Please install Google-Chrome >= 24.0')
         else:
-            raise Exception('Invalid local browser specified: ' + browser)
+            raise AssertionError('Invalid local browser specified: ' + browser)
 
     @classmethod
     def _create_remote_webdriver(cls, browser, ops):
@@ -744,10 +747,9 @@ class selTest(unittest.TestCase):
         elif browser == "internetexplorer":
             desired_caps = webdriver.DesiredCapabilities.INTERNETEXPLORER
         else:
-            raise Exception('Invalid browser selected: ' + browser)
+            raise AssertionError('Invalid browser selected: ' + browser)
         
         hosts = cls.getP2PHosts()
-        #print hosts
         # get first host which matches the desired browser and operating system
         for host in hosts:
             if host[2]  == ops and host[3] == browser:
@@ -755,7 +757,6 @@ class selTest(unittest.TestCase):
                     command_executor = 'http://' + host[0] + ':' + host[1] + '/wd/hub',
                     desired_capabilities=desired_caps
                 )
-                #print('DEBUG: Text will be executed on ' + command_executor)
 
                 # the adhocracyUrl needs to be a IP address which can be reached through lan
                 # so adhocracy.lan:5001 might not work and 127.0.0.1:5001 can't be used.
@@ -763,14 +764,13 @@ class selTest(unittest.TestCase):
                 interface = cls.getConfig('P2P')['interface']
                 ip = cls.get_ip(interface)
                 if ip == "":
-                    raise Exception('IP address from ' + interface + ' could not be resolved')
+                    raise StandardError('IP address from ' + interface + ' could not be resolved')
                 else:
-                    print(' DEBUG: Using IP: ' + ip)
                     cls.adhocracyUrl = 'http://' + ip + ':5001'
                     return
 
         if not hasattr(cls, 'driver'):
-            raise Exception('No proper host found for browser = ' + browser + ' and os = ' + ops)
+            raise StandardError('No proper host found for browser = ' + browser + ' and os = ' + ops)
 
     @classmethod
     def check_firefox_version(cls):
@@ -799,11 +799,11 @@ class selTest(unittest.TestCase):
 
     @classmethod
     def getP2PHosts(cls):
-        # search for selenium servers using bonjour
+        # search for selenium servers with avahi-browse
         hosts=[]
 
         if not os.path.exists("/usr/bin/avahi-browse"):
-            raise Exception('Avahi-browse not found')
+            raise IOError('Avahi-browse not found')
         client_list=subprocess.Popen(["avahi-browse","-trp","_selenium._tcp"],stdout=subprocess.PIPE)
         client_list.wait()
         for line in client_list.stdout.readlines():

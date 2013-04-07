@@ -25,7 +25,6 @@ function usage {
 	echo "   -h, print this message"
 	echo ""
         echo "   -t, start adhocracy server"
-	echo "   -u, specify url existing adhocracy server (ex. http://192.168.0.100:5001)"
 	echo ""
         echo "   -j, disable Javascript (if supported by browser)"
         echo "   -q, make testing visible (not available for htmlunit)"
@@ -48,7 +47,6 @@ while getopts :acfbixrlwhtu:jqzy opt; do
 	    w) windows=1 ;;
 	    h) usage ;;
 	    t) startAdh=1 ;;
-	    u) adhocracy=$OPTARG ;;
 	    j) disableJS=1 ;;
 	    q) testVis=1 ;;
 	    z) video=1 ;;
@@ -92,12 +90,6 @@ fi
 if [ -n "$remoteTest" ]; then
 	export selRemote=$remoteTest
 	echo " Test type:     remote"
-fi
-
-# Check if an url for remote adhocracy server has been set
-if [ -n "$adhocracy" ]; then
-	export selAdhocracyUrl=$adhocracy
-	echo " Remote adhocracy URL: "$adhocracy
 fi
 
 # Check if should make testing visible
