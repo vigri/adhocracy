@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-
+Start a selenium node and offer a specific browser
 """
+
 import os
 import subprocess
 import select
@@ -11,15 +12,13 @@ import sys
 import inspect
 
 
-pth = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
-misc_folder = os.path.join(pth, '..', 'misc')
+script_path = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile(inspect.currentframe()))[0]))
+misc_folder = os.path.join(script_path, 'misc')
 
 if misc_folder not in sys.path:
     sys.path.insert(0, misc_folder)
 
 import pybonjour
-
-
 
 
 try:
@@ -30,7 +29,6 @@ except IndexError:
 name    = "selenium Testnode " + sys.platform
 regtype = "_selenium._tcp"
 port    = 4444
-
 
 
 def register_callback(sdRef, flags, errorCode, name, regtype, domain):
@@ -48,24 +46,22 @@ def isWindows():
         return False
 
 
-root_folder = os.path.join(pth, '..')
 
-
-server_path = os.path.join(root_folder,'res', 'selenium', 'selenium-server-standalone.jar')
+server_path = os.path.join(script_path, 'res', 'all', 'selenium', 'selenium-server-standalone.jar')
 
 if not os.path.isfile(server_path):
-    raise Exception('Selenium-Server not found in res/selenium')
-                  
+    raise Exception('Selenium-Server not found in ' + server_path)
+
 # Paths
 if isWindows():
     txt_os = "windows"  # txt record for bonjour
-    chromedriver = os.path.join(root_folder, 'res','chrome','chromedriver.exe')
+    chromedriver = os.path.join(script_path, 'res', 'windows', 'chrome','chromedriver.exe')
     firefox = os.path.join('C:' + os.sep,'Programme','Mozilla Firefox','firefox.exe')
-    internetexplorer = os.path.join(root_folder, 'res','internetexplorer','IEDriverServer.exe')
+    internetexplorer = os.path.join(script_path, 'res', 'windows', 'internetexplorer','IEDriverServer.exe')
 else:
     txt_os = "linux" # txt record for bonjour
-    chromedriver = os.path.join(root_folder, 'res','chrome','chromedriver')
-    firefox = os.path.join(root_folder, 'res:','firefox','firefox-bin')
+    chromedriver = os.path.join(script_path, 'res', 'linux', 'chrome','chromedriver')
+    firefox = os.path.join(script_path, 'res', 'windows', 'firefox', 'firefox-bin')
 
 
 if browser == "chrome":

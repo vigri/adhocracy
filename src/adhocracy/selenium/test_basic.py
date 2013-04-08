@@ -197,7 +197,7 @@ class Test_basic(selTest):
         try:
             proposal = self.waitCSS('li.content_box h3 > a', raiseException=False)
         except TimeoutException:
-            raise Exception("No proposal has been found")
+            raise AssertionError("No proposal has been found")
 
         # Due to "Element does not exist in cache"-error we need to save the name and cannot use l_proposal.text later
         proposalName = proposal.text
@@ -223,7 +223,7 @@ class Test_basic(selTest):
         if hasattr(selTest, 'defaultProposalUrl'):
             self.loadPage(selTest.defaultProposalUrl)
         else:
-            raise Exception('Proposal was not created successfully before.')
+            raise AssertionError('Proposal was not created successfully before.')
 
         self.waitCSS('#discussions')
 

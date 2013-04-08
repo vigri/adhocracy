@@ -508,8 +508,9 @@ class selTest(unittest.TestCase):
                     print('  > Uploading video, please wait...')
                     desc = 'Selenium driven test using ' + cls.envSelectedBrowser
                     title = 'Selenium ' + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    yt_file = os.path.join(cls.script_dir, 'misc', 'youtube_upload.py')
 
-                    output = subprocess.Popen(['python', 'misc/youtube_upload.py',
+                    output = subprocess.Popen(['python', yt_file,
                                                '--email=' + cls.getConfig('Youtube')['email'],
                                                '--password=' + cls.getConfig('Youtube')['password'],
                                                '--title="' + title + '"', '--description="' + desc + '"',

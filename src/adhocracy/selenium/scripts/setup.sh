@@ -8,11 +8,10 @@ ABSOLUTE_PATH=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)/`basename "${BASH_SOURC
 SCRIPT_FOLDER=`dirname $ABSOLUTE_PATH`
 SELFOLDER=`dirname $SCRIPT_FOLDER`
 
-PKGS_TO_INSTALL="xvfb python-progressbar python-pycurl ia32-libs-gtk ffmpeg avahi-utils"
+PKGS_TO_INSTALL="xvfb python-progressbar python-pycurl ia32-libs-gtk ffmpeg avahi-utils libavahi-compat-libdnssd1"
 echo "Installing $PKGS_TO_INSTALL"
 sudo apt-get install $PKGS_TO_INSTALL -y -q
-
-echo ""
+sudo pip install nose selenium
 
 # create folders
 mkdir -p $SELFOLDER/res
