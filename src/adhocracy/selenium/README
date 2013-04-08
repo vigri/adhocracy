@@ -1,0 +1,35 @@
+****** INTRODUCTION ******
+
+After executing "sh build.sh" Google Chrome and Chromedriver will be installed automatically and you are ready to execute the tests.
+If you want support for HTMLUnit, Firefox, distributed testing and so on, please execute setup.sh inside the selenium directory.
+
+
+**** Distributed testing ****
+
+** Linux **
+Execute python selenium_node.py [BROWSERNAME] to offer your machine as a node with the specified browser.
+On linux machines you need to execute setup.sh to offer other browsers than Google Chrome.
+
+
+** Windows **
+Unfortunately there is no setup-script for windows machines yet.
+Please execute the following steps to offer your machine as a node for distributed testing:
+
+Google Chrome
+1) Download and install Google Chrome from http://www.google.de/intl/de/chrome/browser/
+2) Download and unpack Google Chromedriver from http://code.google.com/p/chromedriver/downloads/list
+3) Copy Google Chromedriver to res/windows/chrome
+
+Mozilla Firefox
+1) Download and install Mozilla Firefox from http://www.mozilla.org/
+
+HTMLUnit
+1) Download and unpack Selenium Server standalone from http://code.google.com/p/selenium/downloads/list
+2) Copy the .jar file to res/all/selenium
+
+Internet Explorer
+1) Download and unpack IEDriverServer from http://code.google.com/p/selenium/downloads/list
+2) Copy the IEDriverServer to res/windows/internetexplorer
+
+
+After obtaining the desired browsers start the node using python selenium_node.py [BROWSERNAME].

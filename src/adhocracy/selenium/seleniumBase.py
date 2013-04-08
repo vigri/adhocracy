@@ -392,11 +392,11 @@ class selTest(unittest.TestCase):
         cls.cleanup = subprocess.Popen(['python',cmd],stderr=nullout,stdout=nullout)
 
         # log and tmp are needed, so we check if the exist. If not, we create them
-        if not os.path.exists('log'):
-            os.makedirs('log')
+        if not os.path.exists(os.path.join(cls.script_dir, 'log')):
+            os.makedirs(os.path.join(cls.script_dir, 'log'))
 
-        if not os.path.exists('tmp'):
-            os.makedirs('tmp')
+        if not os.path.exists(os.path.join(cls.script_dir, 'tmp')):
+            os.makedirs(os.path.join(cls.script_dir, 'tmp'))
 
         ##### Process environment variables
         # disable Xvfb
@@ -491,9 +491,9 @@ class selTest(unittest.TestCase):
                 cls._database_backup_restore()
 
         # check if Xvfb has been used, if so, kill the process
-        """if not cls.envShowTests:
+        if not cls.envShowTests:
             cls._remove_xvfb_display()
-        """
+        
         ## kill cleanup process
         cls.cleanup.kill()
 
@@ -714,7 +714,7 @@ class selTest(unittest.TestCase):
 
         elif browser == 'chrome':
             if cls.check_chrome_version():
-                log_path = os.path.join('log', 'chromedriver')
+                log_path = os.path.join(cls.script_dir, 'log', 'chromedriver')
                 cls.driver = webdriver.Chrome(service_log_path=log_path)
                 # since chromedriver will not be closed even if we call cls.driver.close()
                 # we need to store the PID of chromedriver and kill it inside tearDownClass()
