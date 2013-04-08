@@ -142,8 +142,7 @@ def setup_entities(config, initial_setup):
     else:
         if not model.Instance.find(u"test"):
             log.debug(u'Creating test instance')
-            ti = model.Instance.create(u"test", u"Test Instance", admin)
-            ti.require_valid_email = False
+            model.Instance.create(u"test", u"Test Instance", admin)
 
         if asbool(config.get('adhocracy.use_feedback_instance')):
             feedback_key = config.get('adhocracy.feedback_instance_key',
