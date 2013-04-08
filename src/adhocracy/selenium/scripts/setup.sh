@@ -3,11 +3,12 @@
 # Install all relevant dependencies for using selenium additionally with htmlunit, firefox
 # and features like video recording, youtube-upload
 
-SCRIPT=`realpath $0`
-SCRIPTPATH=`dirname $SCRIPT`
-SELFOLDER=$SCRIPTPATH/..
+#http://stackoverflow.com/questions/4774054/reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
+ABSOLUTE_PATH=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)/`basename "${BASH_SOURCE[0]}"`
+SCRIPT_FOLDER=`dirname $ABSOLUTE_PATH`
+SELFOLDER=`dirname $SCRIPT_FOLDER`
 
-PKGS_TO_INSTALL="xvfb python-progressbar python-pycurl ia32-libs-gtk ffmpeg avahi-utils google-chrome-stable"
+PKGS_TO_INSTALL="xvfb python-progressbar python-pycurl ia32-libs-gtk ffmpeg avahi-utils"
 echo "Installing $PKGS_TO_INSTALL"
 sudo apt-get install $PKGS_TO_INSTALL -y -q
 
@@ -55,6 +56,24 @@ fi
 
 unzip -j -qq chromedriver_linux
 rm chromedriver_linux
+
+
+# get google chrome for selenium testing
+if which google-chrome >/dev/null ; then
+  echo "Google chrome installed... skipping..."
+else
+  echo "Installing google Chrome"
+  if [ `getconf LONG_BIT` = "64" ]
+  then
+      wget -nv https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
+      sudo dpkg -i google-chrome-stable_current_amd64.deb
+      rm google-chrome-stable_current_amd64.deb
+  else
+      wget -nv https://dl.google.com/linux/direct/google-chrome-stable_current_i386.deb
+      sudo dpkg -i google-chrome-stable_current_i386.deb
+      rm google-chrome-stable_current_i386.deb
+  fi
+fi
 
 echo ""
 echo "> Done..."

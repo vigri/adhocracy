@@ -1,7 +1,8 @@
 #!/bin/bash
 
-SCRIPT=`realpath $0`
-SCRIPTPATH=`dirname $SCRIPT`
+#http://stackoverflow.com/questions/4774054/reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
+ABSOLUTE_PATH=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)/`basename "${BASH_SOURCE[0]}"`
+SCRIPTPATH=`dirname $ABSOLUTE_PATH`
 
 # Helper function for pushing elements to browser-array
 function browser_push(){
@@ -109,7 +110,7 @@ else
 fi
 # Check if we should record a video
 if [ -n "$youtube" ]; then
-	export envYoutubeUpload=$youtube
+	export selYoutubeUpload=$youtube
 	echo " Video upload:  on"
 else
 	echo " Video upload:  off"
@@ -130,6 +131,6 @@ fi
 for i in "${browser[@]}"; do
 	export selBrowser=$i
 	echo "Starting nosetests with $i browser.........."
-	NOSETESTS="nosetests $SCRIPTPATH/ $commands"
+	NOSETESTS="nosetests $SCRIPTPATH $commands"
 	$NOSETESTS
 done

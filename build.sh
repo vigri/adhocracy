@@ -160,7 +160,7 @@ if ! $not_use_sudo_commands; then
     case $distro in
         debian )
     PKGS_TO_INSTALL=$PKGS_TO_INSTALL' libpng-dev libjpeg-dev gcc make build-essential bin86 unzip libpcre3-dev zlib1g-dev git mercurial python python-virtualenv python-dev libsqlite3-dev openjdk-6-jre libpq-dev'
-    PKGS_TO_INSTALL=$PKGS_TO_INSTALL' openssh-client mutt google-chrome-stable'
+    PKGS_TO_INSTALL=$PKGS_TO_INSTALL' openssh-client mutt'
 
     if $install_mysql_client; then
         PKGS_TO_INSTALL=$PKGS_TO_INSTALL' libmysqlclient-dev'
@@ -168,7 +168,7 @@ if ! $not_use_sudo_commands; then
     ;;
         arch )
     PKGS_TO_INSTALL=$PKGS_TO_INSTALL' libpng libjpeg gcc make base-devel bin86 unzip zlib git mercurial python2 python2-virtualenv python2-pip sqlite jre7-openjdk postgresql-libs'
-        PKGS_TO_INSTALL=$PKGS_TO_INSTALL' openssh mutt google-chrome-stable'
+        PKGS_TO_INSTALL=$PKGS_TO_INSTALL' openssh mutt'
 
         if $install_mysql_client; then
         PKGS_TO_INSTALL=$PKGS_TO_INSTALL' libmysqlclient'
@@ -222,6 +222,31 @@ WantedBy=multi-user.target
         $SUDO_CMD chmod a+x "$INIT_FILE"
         $SUDO_CMD $SERVICE_CMD adhocracy_services $SERVICE_CMD_PREFIX
     fi
+fi
+
+# get chromedriver for selenium testing
+if [ `getconf LONG_BIT` = "64" ]
+then
+    download "https://chromedriver.googlecode.com/files/chromedriver_linux64_26.0.1383.0.zip" "chromedriver_linux"
+    
+else
+    download "https://chromedriver.googlecode.com/files/chromedriver_linux32_26.0.1383.0.zip" "chromedriver_linux"
+fi
+
+unzip -j -qq chromedriver_linux
+rm chromedriver_linux
+$SUDO_CMD mv -f chromedriver /usr/local/bin/chromedriver
+
+# get google chrome for selenium testing
+if [ `getconf LONG_BIT` = "64" ]
+then
+    download "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb" "google-chrome-stable_current_amd64.deb"
+    $SUDO_CMD dpkg -i google-chrome-stable_current_amd64.deb
+    rm google-chrome-stable_current_amd64.deb
+else
+    download "https://dl.google.com/linux/direct/google-chrome-stable_current_i386.deb" "google-chrome-stable_current_i386.deb"
+    $SUDO_CMD dpkg -i google-chrome-stable_current_i386.deb
+    rm google-chrome-stable_current_i386.deb
 fi
 
 
@@ -296,18 +321,8 @@ exec bin/paster serve --reload etc/adhocracy-interactive.ini
 chmod a+x "bin/adhocracy_interactive.sh"
 
 
-# get chromedriver for selenium testing
-if [ `getconf LONG_BIT` = "64" ]
-then
-    download "https://chromedriver.googlecode.com/files/chromedriver_linux64_26.0.1383.0.zip" "chromedriver_linux"
-    
-else
-    download "https://chromedriver.googlecode.com/files/chromedriver_linux32_26.0.1383.0.zip" "chromedriver_linux"
-fi
 
-unzip -j -qq chromedriver_linux
-rm chromedriver_linux
-$SUDO_CMD mv -f chromedriver /usr/local/bin/chromedriver
+
 
 if $autostart; then
     bin/supervisord

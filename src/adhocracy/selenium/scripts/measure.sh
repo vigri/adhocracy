@@ -6,6 +6,11 @@
 SCRIPT=`realpath $0`
 SCRIPTPATH=`dirname $SCRIPT`
 
+#http://stackoverflow.com/questions/4774054/reliable-way-for-a-bash-script-to-get-the-full-path-to-itself
+ABSOLUTE_PATH=$(cd `dirname "${BASH_SOURCE[0]}"` && pwd)/`basename "${BASH_SOURCE[0]}"`
+SCRIPT_FOLDER=`dirname $ABSOLUTE_PATH`
+SELFOLDER=`dirname $SCRIPT_FOLDER`
+
 # start timestamp
 TS="$(date +%s)"
 
@@ -13,13 +18,13 @@ TS="$(date +%s)"
 #CMD="python start_multiprocessing.py"
 
 # for single-processing uncomment the following line
-CMD="$SCRIPTPATH/../start_test.sh -a -b -sv"
+CMD="$SELFOLDER/start_test.sh -a -b -sv"
 
 # file to store results
-LOGFILE="$SCRIPTPATH/../tmp/measure_$TS.txt" 
+LOGFILE="$SELFOLDER/tmp/measure_$TS.txt"
 
 # create tmp-folder if needed
-mkdir -p "$SCRIPTPATH/../tmp"
+mkdir -p "$SELFOLDER/tmp"
 
 # file header
 date -d @${TS} "+%Y-%m-%d %T" >> $LOGFILE 

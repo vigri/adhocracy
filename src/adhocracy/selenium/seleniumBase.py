@@ -373,7 +373,7 @@ class selTest(unittest.TestCase):
         cls.Config.read(config_path)
 
         # general vars
-        cls.adhocracyUrl = 'http://adhocracy.lan:5001'
+        cls.adhocracyUrl = 'http://localhost:5001'
         cls.login_cookie = ''
         cls.adhocracy_logfile = None
         cls.adhocracy_dir = cls.getConfig('Adhocracy')['dir']
@@ -503,7 +503,7 @@ class selTest(unittest.TestCase):
                 print('  > Video record: ' + cls.video_path)
 
                 # now check if the user wants the video to be uploaded on youtube
-                envYoutubeUpload = os.environ.get('envYoutubeUpload', '') == '1'
+                envYoutubeUpload = os.environ.get('selYoutubeUpload', '') == '1'
                 if envYoutubeUpload:
                     print('  > Uploading video, please wait...')
                     desc = 'Selenium driven test using ' + cls.envSelectedBrowser
@@ -647,10 +647,9 @@ class selTest(unittest.TestCase):
             try:
                 dict1[option] = cls.Config.get(section, option)
                 if dict1[option] == -1:
-                    print('exception on %s!' % option)
+                    raise KeyError('Invalid config option %s' % option)
             except:
-                print('exception on %s!' % option)
-                dict1[option] = None
+                raise KeyError('Invalid config option %s' % option)
         return dict1
 
     @classmethod
